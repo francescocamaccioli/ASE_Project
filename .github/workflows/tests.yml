@@ -24,4 +24,6 @@ jobs:
               run: npm install -g newman
 
             - name: Run the tests
-              run: newman run "https://api.postman.com/collections/26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}"
+                # TODO: prendere le env var direttamente da postman?
+                # TODO: usare .json come chiesto da professore invece che API?
+              run: newman run "https://api.postman.com/collections/26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}" --env-var "GATEWAY_URL=http://localhost:5001"

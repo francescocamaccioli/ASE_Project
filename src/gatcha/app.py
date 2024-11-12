@@ -1,7 +1,8 @@
 import random
-from flask import Flask, request, make_response, jsonify
+from flask import Flask, request, make_response
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
+import bson.json_util as json_util
 
 RARITY_PROBABILITIES = {
     'comune': 0.5,       # 50%
@@ -21,6 +22,7 @@ def weighted_random_choice(rarities):
     probability_list = list(rarities.values())
     return random.choices(rarity_list, probability_list, k=1)[0]
 
+# TODO: non usata?
 # Funzione generica per ottenere dati da un database specifico
 def get_data_from_db(client, db_name, collection_name, query={}):
     db = client[db_name]
@@ -38,8 +40,8 @@ def insert_data_to_db(client, db_name, collection_name, data):
 def add_gatcha_data():
     data = request.json
     try:
-        insert_data_to_db(client_gatcha, 'gatcha_db', 'results', data)
-        return make_response(jsonify({"message": "Data added to gatcha_db"}), 200)
+        insert_data_to_db(client_gatcha, 'gatcha_db', 'results', data) 
+        return make_response(json_util.dumps({"message": "Data added to gatcha_db"}), 200)
     except Exception as e:
         return make_response(str(e), 500)
 
@@ -52,14 +54,15 @@ def roll_gatcha():
         selected_rarity = weighted_random_choice(RARITY_PROBABILITIES)
         
         # Query al database per ottenere un personaggio della rarità selezionata
-        gatcha_data = client_gatcha['gatcha_db']['results']
+        gatcha_data = client_gatcha['gatcha_db']['results'] # TODO: perché chiamata results? cambiare nome?
         character = gatcha_data.find_one({'rarity': selected_rarity})
         
         # Gestisci l'eventualità che non ci sia un personaggio di quella rarità
         if not character:
             return make_response(f"No character found for rarity {selected_rarity}\n", 404)
         
-        return make_response(jsonify(character), 200)
+        
+        return make_response(json_util.dumps(character), 200)
     except Exception as e:
         return make_response(str(e), 500)
 

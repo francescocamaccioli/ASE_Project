@@ -1,0 +1,74 @@
+services:
+  # Gateway Service
+  gateway:
+    build: ./gateway
+    ports:
+      - "5000:5000"
+    depends_on:
+      - gatcha
+      #- user  # Commentato perché non necessario per Gacha
+      #- market  # Commentato perché non necessario per Gacha
+      - db-manager
+
+  # Gatcha service
+  gatcha:
+    build: ./gatcha
+    depends_on:
+      - db-manager  # Il servizio Gatcha dipende dal db-manager
+
+  # User service (non necessario per il funzionamento del Gacha)
+  # user:
+  #   build: ./user
+  #   depends_on:
+  #     - db-manager
+
+  # Market service (non necessario per il funzionamento del Gacha)
+  # market:
+  #   build: ./market
+  #   depends_on:
+  #     - db-manager
+
+  # DB Manager (Container to interact with MongoDB)
+  db-manager:
+    build: ./dbm
+    depends_on:
+      - db-gatcha  # Solo il database di Gatcha è necessario
+
+  # MongoDB for gatcha (Database for gatcha service)
+  db-gatcha:
+    image: mongo:latest
+    ports:
+      - "27017:27017"  # Host to container mapping
+    volumes:
+      - dbdata-gatcha:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: gatcha_db  # Name of the DB
+    
+    command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
+
+  # MongoDB for user (non necessario per Gacha)
+  # db-user:
+  #   image: mongo:latest
+  #   ports:
+  #     - "27018:27017"  # Host to container mapping
+  #   volumes:
+  #     - dbdata-user:/data/db
+  #   environment:
+  #     MONGO_INITDB_DATABASE: user_db  # Name of the DB
+  #   command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
+
+  # MongoDB for market (non necessario per Gacha)
+  # db-market:
+  #   image: mongo:latest
+  #   ports:
+  #     - "27019:27017"  # Host to container mapping
+  #   volumes:
+  #     - dbdata-market:/data/db
+  #   environment:
+  #     MONGO_INITDB_DATABASE: market_db  # Name of the DB
+  #   command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
+
+volumes:
+  dbdata-gatcha:
+  # dbdata-user:  # Commentato perché non necessario per Gacha
+  # dbdata-market:  # Commentato perché non necessario per Gacha

@@ -3,7 +3,7 @@ services:
   gateway:
     build: ./gateway
     ports:
-      - "5000:5000"
+      - "5001:5000"
     depends_on:
       - gatcha
       #- user  # Commentato perché non necessario per Gacha
@@ -41,6 +41,7 @@ services:
       - "27017:27017"  # Host to container mapping
     volumes:
       - dbdata-gatcha:/data/db
+      - ./mongo/seed-data:/docker-entrypoint-initdb.d  # mongo, all'avvio, eseguirà automaticamente il file .js per popolare con i dati iniziali. see: https://stackoverflow.com/questions/42912755/how-to-create-a-db-for-mongodb-container-on-start-up/42917632#42917632
     environment:
       MONGO_INITDB_DATABASE: gatcha_db  # Name of the DB
     

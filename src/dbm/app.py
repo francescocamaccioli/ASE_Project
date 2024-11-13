@@ -1,6 +1,7 @@
 from flask import Flask, request, make_response, jsonify
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
+import bson.json_util as json_util
 
 # Connessione ai database dei microservizi (modificato per usare i container MongoDB tramite nome servizio)
 client_gatcha = MongoClient("db-gatcha", 27017, maxPoolSize=50)
@@ -26,7 +27,7 @@ def insert_data_to_db(client, db_name, collection_name, data):
 def get_all_logs():
     try:
         logs = get_data_from_db(client_gatcha, 'db_manager_db', 'logs')
-        return make_response(jsonify(logs), 200)
+        return make_response(json_util.dumps(logs), 200)
     except Exception as e:
         return make_response(str(e), 500)
     

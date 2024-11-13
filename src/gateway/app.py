@@ -68,6 +68,7 @@ def dbm_op(op):
     return "Operation not supported", 400
 
 
+# TODO: perché non /dbm/getAll?
 @app.route('/getAll')# funzione per ottenere tutti i log di tutte le operazioni dal db-manager
 def getAll():
     try:

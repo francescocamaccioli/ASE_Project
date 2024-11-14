@@ -1,0 +1,74 @@
+{
+    "swagger": "2.0",
+    "info": {
+      "title": "Gacha Game API",
+      "description": "API per il backend di un gioco Gacha con microservizi",
+      "version": "1.0.0"
+    },
+    "host": "localhost:5000",
+    "basePath": "/",
+    "schemes": ["http"],
+    "paths": {
+      "/gatcha/roll": {
+        "get": {
+          "summary": "Effettua un'estrazione per un personaggio",
+          "description": "Estrae un personaggio con una rarità basata sulle probabilità definite e restituisce le informazioni del personaggio dal database.",
+          "responses": {
+            "200": {
+              "description": "Personaggio estratto con successo",
+              "schema": {
+                "type": "object",
+                "example": {
+                  "_id": "ObjectId",
+                  "name": "Eroe Epico",
+                  "rarity": "epic",
+                  "power": 120
+                }
+              }
+            },
+            "404": {
+              "description": "Nessun personaggio trovato per la rarità selezionata",
+              "schema": {
+                "type": "string",
+                "example": "No character found for rarity epic"
+              }
+            },
+            "500": {
+              "description": "Errore generico",
+              "schema": {
+                "type": "string",
+                "example": "Errore durante l'estrazione"
+              }
+            }
+          }
+        }
+      },
+      "/dbm/checkconnection": {
+        "get": {
+          "summary": "Verifica la connessione al database",
+          "description": "Effettua un ping al database per assicurarsi che sia collegato.",
+          "responses": {
+            "200": {
+              "description": "Connessione al database riuscita",
+              "schema": {
+                "type": "object",
+                "example": {
+                  "message": "Connection to db-gatcha is successful!"
+                }
+              }
+            },
+            "500": {
+              "description": "Errore di connessione al database",
+              "schema": {
+                "type": "object",
+                "example": {
+                  "error": "Failed to connect to db-gatcha"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  

@@ -16,6 +16,12 @@ services:
     depends_on:
       - db-manager  # Il servizio Gatcha dipende dal db-manager
 
+  swagger-service:
+    build:
+      context: ./monitoring
+    ports:
+      - "8082:8080"
+
   # User service (non necessario per il funzionamento del Gacha)
   # user:
   #   build: ./user

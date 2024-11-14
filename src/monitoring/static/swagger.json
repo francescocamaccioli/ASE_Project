@@ -5,7 +5,7 @@
       "description": "API per il backend di un gioco Gacha con microservizi",
       "version": "1.0.0"
     },
-    "host": "localhost:5000",
+    "host": "localhost:5001",
     "basePath": "/",
     "schemes": ["http"],
     "paths": {

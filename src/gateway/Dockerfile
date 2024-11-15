@@ -16,6 +16,6 @@ COPY . /app
 # Esponi la porta su cui il servizio Flask sarà in ascolto
 EXPOSE 5000
 
-
-# Comando di esecuzione dell'applicazione
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000", "--cert=localhost_cert.pem" , "--key=localhost_key.pem"]
+# Comando per avviare il server
+# il nome dei segreti è quello assegnato nel docker-compose.yml
+CMD flask run --host=0.0.0.0 --port=5000 --cert=/run/secrets/gateway_cert --key=/run/secrets/gateway_cert_key

@@ -18,4 +18,4 @@ EXPOSE 5000
 
 
 # Comando di esecuzione dell'applicazione
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
+CMD ["flask", "run", "--host=0.0.0.0", "--port=5000", "--cert=localhost_cert.pem" , "--key=localhost_key.pem"]

@@ -10,6 +10,10 @@ services:
       #- market  # Commentato perché non necessario per Gacha
       - db-manager
 
+    secrets:
+      - gateway_cert
+      - gateway_key
+  
   # Gatcha service
   gatcha:
     build: ./gatcha
@@ -73,3 +77,13 @@ volumes:
   dbdata-gatcha:
   # dbdata-user:  # Commentato perché non necessario per Gacha
   # dbdata-market:  # Commentato perché non necessario per Gacha
+
+
+
+
+
+secrets:
+  gateway_cert:
+    file: ./gateway/localhost_cert.pem
+  gateway_key:
+    file: ./gateway/localhost_key.pem

@@ -1,0 +1,2 @@
+# i file .pem non devono essere copiati nel container, perché devono essere gestiti da "secrets", che è nel docker-compose
+*.pem

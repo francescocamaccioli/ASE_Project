@@ -1,6 +1,7 @@
 services:
 
 
+
   # Gateway Service
   gateway:
     build: ./gateway
@@ -14,6 +15,7 @@ services:
     secrets:
       - gateway_cert
       - gateway_cert_key
+
 
 
   # Gatcha service
@@ -50,7 +52,7 @@ services:
       - db-gatcha  # Solo il database di Gatcha è necessario
     secrets:
       - db-manager_cert
-      - db-manager_key
+      - db-manager_cert_key
 
 
 
@@ -65,8 +67,11 @@ services:
       - ./mongo/seed-data:/docker-entrypoint-initdb.d  # mongo, all'avvio, eseguirà automaticamente il file .js per popolare con i dati iniziali. see: https://stackoverflow.com/questions/42912755/how-to-create-a-db-for-mongodb-container-on-start-up/42917632#42917632
     environment:
       MONGO_INITDB_DATABASE: gatcha_db  # Name of the DB
-    
-    command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
+
+
+    command: mongod --quiet
+    # TODO: far funzionare con TLS, c'è una slide con un esempio di come far, ma non funziona
+    # --tlsAllowConnectionsWithoutCertificates --tlsMode preferTLS --tlsCertificateKeyFile /run/secrets/db-gatcha_cert_key --tlsCAFile /run/secrets/db-manager_cert
     secrets:
       - db-gatcha_cert
       - db-gatcha_cert_key
@@ -132,9 +137,9 @@ secrets:
     file: ./dbm/localhost_key.pem
 
   db-gatcha_cert:
-    file: ./db-gatcha/localhost_cert.pem
+    file: ./mongo/localhost_cert.pem
   db-gatcha_cert_key:
-    file: ./db-gatcha/localhost_key.pem
+    file: ./mongo/localhost_key.pem
 
   
 

@@ -6,15 +6,19 @@ from pymongo.errors import ServerSelectionTimeoutError
 
 from werkzeug.exceptions import NotFound
 
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+
 ALLOWED_USER_OPS = ['register', 'login', 'admin/register', 'admin/login', 'add-balance', 'profile']
 ALLOWED_GATCHA_OPS = ['roll', 'get-gatcha-id', 'get-all-gatcha', 'add-gatcha', 'delete-gatcha']
 ALLOWED_MARKET_OPS = ['create-auction', 'bid', 'get-auction', 'add-auction', 'delete-auction']
 
 #CHANGE URLS TO MATCH THE NAMES AND PORTS OF THE SERVICES IN THE DOCKER-COMPOSE FILE
-GATCHA_URL = 'http://gatcha:5000'
-USER_URL = 'http://user:5000'
-MARKET_URL = 'http://market:5000'
-DB_MANAGER_URL = 'http://db-manager:5000'
+GATCHA_URL = 'https://gatcha:5000'
+USER_URL = 'https://user:5000'
+MARKET_URL = 'https://market:5000'
+DB_MANAGER_URL = 'https://db-manager:5000'
 
 
 ids = {} #CAREFUL, THIS IS NOT FOR MULTIUSER AND MULTITHREADING, JUST FOR DEMO PURPOSES
@@ -27,12 +31,13 @@ def create_app():
 def service_request(url, data=None):
     try:
         if data:
-            response = requests.post(url, json=data)
+            response = requests.post(url, json=data, verify=False)
         else:
-            response = requests.get(url)
+            response = requests.get(url, verify=False)
         response.raise_for_status()
         return response.json()
-    except ConnectionError:
+    except ConnectionError as e:
+        app.logger.error(f"ConnectionError connecting to {url}: {e}")
         return make_response('Gatcha service is down\n', 500)
     except HTTPError:
         return make_response(response.content, response.status_code)
@@ -75,7 +80,8 @@ def getAll():
         x = requests.get(DB_MANAGER_URL + '/getAll', verify=False)
         x.raise_for_status()
         return x.json()
-    except ConnectionError:
+    except ConnectionError as e:
+        app.logger.error(f"ConnectionError connecting to {DB_MANAGER_URL}: {e}")
         return make_response('DB Manager service is down\n', 500)
     except HTTPError:
         return make_response(x.content, x.status_code)

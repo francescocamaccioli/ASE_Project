@@ -68,13 +68,15 @@ services:
     environment:
       MONGO_INITDB_DATABASE: gatcha_db  # Name of the DB
 
+    # ho dovuto unire cert e key in unico file, solo per mongo a differenza degli altri servizi
+    # info qui: https://gist.github.com/achesco/b7cf9c0c93186c4a7362fb4832c866c0
+    command: mongod --quiet --logpath /var/log/mongodb/mongod.log --tlsAllowConnectionsWithoutCertificates --tlsMode preferTLS --tlsCertificateKeyFile /run/secrets/db-gatcha-cert-and-key --tlsCAFile /run/secrets/db-gatcha_cert
 
-    command: mongod --quiet
-    # TODO: far funzionare con TLS, c'è una slide con un esempio di come far, ma non funziona
-    # --tlsAllowConnectionsWithoutCertificates --tlsMode preferTLS --tlsCertificateKeyFile /run/secrets/db-gatcha_cert_key --tlsCAFile /run/secrets/db-manager_cert
+    
     secrets:
       - db-gatcha_cert
-      - db-gatcha_cert_key
+      # - db-gatcha_cert_key
+      - db-gatcha-cert-and-key
 
 
 
@@ -140,6 +142,8 @@ secrets:
     file: ./mongo/localhost_cert.pem
   db-gatcha_cert_key:
     file: ./mongo/localhost_key.pem
+  db-gatcha-cert-and-key:
+    file: ./mongo/mongo-cert-and-key.key
 
   
 

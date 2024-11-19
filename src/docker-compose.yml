@@ -1,4 +1,12 @@
 services:
+
+  # DB Manager (Gestisce la logica di accesso ai vari DB)
+  db-manager:
+    build: ./dbm
+    environment:
+      - DB_GATCHA_URL=mongodb://db-gatcha:27017  # URL di connessione al database di Gatcha
+      - DB_USER_URL=mongodb://db-user:27017  # URL di connessione al database degli utenti
+
   # Gateway Service
   gateway:
     build: ./gateway
@@ -6,70 +14,51 @@ services:
       - "5001:5000"
     depends_on:
       - gatcha
-      #- user  # Commentato perché non necessario per Gacha
-      #- market  # Commentato perché non necessario per Gacha
+      - user  # Commentato perché non necessario per Gacha
       - db-manager
+    environment:
+    - DBM_URL=http://db-manager:5000  # URL per connettersi al DBM
+
 
   # Gatcha service
   gatcha:
     build: ./gatcha
     depends_on:
       - db-manager  # Il servizio Gatcha dipende dal db-manager
+    environment:
+      - DBM_URL=http://db-manager:5000  # URL per connettersi a DBM
 
-  # User service (non necessario per il funzionamento del Gacha)
-  # user:
-  #   build: ./user
-  #   depends_on:
-  #     - db-manager
-
-  # Market service (non necessario per il funzionamento del Gacha)
-  # market:
-  #   build: ./market
-  #   depends_on:
-  #     - db-manager
-
-  # DB Manager (Container to interact with MongoDB)
-  db-manager:
-    build: ./dbm
+  # User Service
+  user:
+    build: ./user
     depends_on:
-      - db-gatcha  # Solo il database di Gatcha è necessario
+      - db-manager  # Aggiornato per dipendere da db-manager, non più dbm
+    environment:
+      - DBM_URL=http://db-manager:5000  # URL per connettersi a DBM
 
-  # MongoDB for gatcha (Database for gatcha service)
+  # MongoDB for gatcha (Database per il servizio Gatcha)
   db-gatcha:
     image: mongo:latest
     ports:
-      - "27017:27017"  # Host to container mapping
+      - "27017:27017"  # Porta esposta per il database
     volumes:
       - dbdata-gatcha:/data/db
-      - ./mongo/seed-data:/docker-entrypoint-initdb.d  # mongo, all'avvio, eseguirà automaticamente il file .js per popolare con i dati iniziali. see: https://stackoverflow.com/questions/42912755/how-to-create-a-db-for-mongodb-container-on-start-up/42917632#42917632
+      - ./mongo/seed-data:/docker-entrypoint-initdb.d # mongo, all'avvio, esegue automaticamente tutti i file .js che trova in quella cartella. serve per popolare con i dati iniziali. see: https://stackoverflow.com/questions/42912755/how-to-create-a-db-for-mongodb-container-on-start-up/42917632#42917632
     environment:
-      MONGO_INITDB_DATABASE: gatcha_db  # Name of the DB
-    
+      MONGO_INITDB_DATABASE: gatcha_db  # Nome del database per Gatcha
     command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
 
-  # MongoDB for user (non necessario per Gacha)
-  # db-user:
-  #   image: mongo:latest
-  #   ports:
-  #     - "27018:27017"  # Host to container mapping
-  #   volumes:
-  #     - dbdata-user:/data/db
-  #   environment:
-  #     MONGO_INITDB_DATABASE: user_db  # Name of the DB
-  #   command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
-
-  # MongoDB for market (non necessario per Gacha)
-  # db-market:
-  #   image: mongo:latest
-  #   ports:
-  #     - "27019:27017"  # Host to container mapping
-  #   volumes:
-  #     - dbdata-market:/data/db
-  #   environment:
-  #     MONGO_INITDB_DATABASE: market_db  # Name of the DB
-  #   command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
+  # MongoDB for user (Database per il servizio User)
+  db-user:
+    image: mongo:latest
+    ports:
+      - "27018:27017"  # Host to container mapping
+    volumes:
+      - dbdata-user:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: user_db  # Nome del database per gli utenti
+    command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
 
 volumes:
   dbdata-gatcha:
-  # dbdata-user:  # Commentato perché non necessario per Gacha
-  # dbdata-market:  # Commentato perché non necessario per Gacha
+  dbdata-user:  # Volume per db-user

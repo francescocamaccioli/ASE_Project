@@ -1,9 +1,8 @@
 import os
 import logging
 from typing import Optional, Dict, Any
-
 import requests
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from requests.exceptions import ConnectionError, HTTPError, RequestException
 from werkzeug.exceptions import BadRequest, MethodNotAllowed
 
@@ -14,89 +13,72 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# TODO: se poi scaliamo orizzontalmente creando più repliche di ogni servizio, come facciamo a dirottare le richieste alle varie repliche dei servizi?
 # Service URLs from environment variables with default values
-GATCHA_URL = os.getenv('GATCHA_URL', 'http://gatcha:5000')
-USER_URL = os.getenv('USER_URL', 'http://user:5000')
-MARKET_URL = os.getenv('MARKET_URL', 'http://market:5000')
-DB_MANAGER_URL = os.getenv('DBM_URL', 'http://db-manager:5000')
-
-# Allowed operations mapping
-ALLOWED_OPERATIONS = {
-    'user': {
-        'register': 'POST',
-        'login': 'POST',
-        'profile': 'GET',
-        'add-balance': 'POST',
-        'get_user_from_name': 'GET',
-    },
-    'gatcha': {
-        'roll': 'GET',
-    },
-    'dbm': {
-        'checkconnection': 'GET',
-        'notify': 'POST',
-        'getAll': 'GET',
-    }
-}
-
 SERVICE_URLS = {
-    'user': USER_URL,
-    'gatcha': GATCHA_URL,
-    'dbm': DB_MANAGER_URL,
+    'user': os.getenv('USER_URL', 'http://user:5000'),
+    'gatcha': os.getenv('GATCHA_URL', 'http://gatcha:5000'),
+    'market': os.getenv('MARKET_URL', 'http://market:5000'),
+    'dbm': os.getenv('DBM_URL', 'http://db-manager:5000'),
 }
 
-
-
-
-
-
-def service_request(service_name: str, operation: str, method: str, params: Optional[Dict[str, Any]] = None, data: Optional[Dict[str, Any]] = None) -> Any:
-    """Helper function to make requests to service endpoints.
-
+def forward_request(service_name: str, subpath: str) -> Response:
+    """
+    Forwards the incoming request to the specified service with the given subpath.
+    
     Args:
-        service_name (str): The service name ('user', 'gatcha', etc.).
-        operation (str): The service operation.
-        method (str): HTTP method ('GET', 'POST').
-        params (Optional[Dict[str, Any]]): Query parameters.
-        data (Optional[Dict[str, Any]]): Data to be sent in the request.
-
+        service_name (str): The name of the target service.
+        subpath (str): The subpath to append to the service URL.
+    
     Returns:
-        Any: The JSON response from the service.
-
-    Raises:
-        HTTPError: If the HTTP request returned an unsuccessful status code.
-        ConnectionError: If there was a connection error.
-        RequestException: Other requests exceptions.
+        Response: The response object from the target service.
     """
     base_url = SERVICE_URLS.get(service_name)
     if not base_url:
-        raise ValueError(f"Unknown service: {service_name}")
+        logger.warning(f"Unknown service: {service_name}")
+        return jsonify({'error': 'Service not found'}), 404
 
-    url = f"{base_url}/{operation}"
+    # Construct the target URL
+    target_url = f"{base_url}/{subpath}"
+    logger.info(f"Forwarding {request.method} request to {target_url}")
 
     try:
-        if method.upper() == 'POST':
-            response = requests.post(url, json=data)
-        else:
-            response = requests.get(url, params=params)
-        response.raise_for_status()
-        return response.json()
-    except (HTTPError, ConnectionError) as http_err:
-        logger.error(f"HTTP error occurred while accessing {url}: {http_err}")
-        raise
-    except RequestException as req_err:
-        logger.error(f"Request error occurred while accessing {url}: {req_err}")
-        raise
-    except ValueError as val_err:
-        logger.error(f"Error decoding JSON from {url}: {val_err}")
-        raise
+        # Prepare the headers, excluding host to avoid conflicts
+        headers = {key: value for key, value in request.headers if key.lower() != 'host'}
 
+        # Forward the request based on its method
+        response = requests.request(
+            method=request.method,
+            url=target_url,
+            params=request.args,
+            data=request.get_data(),
+            headers=headers,
+            cookies=request.cookies,
+            allow_redirects=False,
+            timeout=10  # you can adjust the timeout as needed
+        )
 
+        # Prepare the response to return to the client
+        excluded_headers = ['content-encoding', 'transfer-encoding', 'connection']
+        headers = [(name, value) for name, value in response.raw.headers.items()
+                   if name.lower() not in excluded_headers]
 
+        return Response(response.content, response.status_code, headers)
 
+    except ConnectionError as ce:
+        logger.error(f"Connection error while accessing {target_url}: {ce}")
+        return jsonify({'error': 'Service unavailable'}), 503
+    except HTTPError as he:
+        logger.error(f"HTTP error while accessing {target_url}: {he}")
+        return jsonify({'error': 'HTTP error with service'}), he.response.status_code if he.response else 500
+    except RequestException as re:
+        logger.error(f"Request exception while accessing {target_url}: {re}")
+        return jsonify({'error': 'Error forwarding request'}), 500
+    except Exception as e:
+        logger.exception(f"Unexpected error while forwarding to {target_url}: {e}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 # ERROR HANDLERS ---------------------------------------------------------------
-
 @app.errorhandler(400)
 def bad_request(error):
     return jsonify({'error': str(error.description)}), 400
@@ -113,79 +95,21 @@ def method_not_allowed(error):
 def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
-
-
 # ROUTES -----------------------------------------------------------------------
-
-@app.route('/<service>/<operation>', methods=['GET', 'POST'])
-@app.route('/<service>/<operation>/<path:param>', methods=['GET'])
-def gateway_handler(service, operation, param=None):
-    """General gateway handler to route requests to appropriate services and operations."""
-    # Validate service
-    if service not in ALLOWED_OPERATIONS:
-        logger.warning(f"Unknown service: {service}")
-        return jsonify({'error': 'Service not found'}), 404
-
-    # Validate operation
-    allowed_ops = ALLOWED_OPERATIONS[service]
-    if operation not in allowed_ops:
-        logger.warning(f"Operation '{operation}' not allowed for service '{service}'")
-        return jsonify({'error': 'Operation not allowed'}), 400
-
-    # Validate method
-    method_allowed = allowed_ops[operation]
-    if method_allowed != request.method:
-        logger.warning(f"Method '{request.method}' not allowed for operation '{operation}'")
-        raise MethodNotAllowed()
-
-    # Prepare parameters and data
-    params = {}
-    data = None
-
-    if request.method == 'GET':
-        if param:
-            # If there is a parameter in the URL, include it in the params
-            params['param'] = param
-        # Include query parameters
-        params.update(request.args.to_dict())
-    elif request.method == 'POST':
-        data = request.get_json()
-        if data is None:
-            raise BadRequest('Request must be in JSON format')
-
-    try:
-        # Call the appropriate service
-        json_response = service_request(
-            service_name=service,
-            operation=operation,
-            method=request.method,
-            params=params,
-            data=data
-        )
-        return jsonify(json_response), 200
-    except HTTPError as http_err:
-        status_code = http_err.response.status_code if http_err.response else 500
-        logger.error(f"HTTPError: {http_err}")
-        return jsonify({'error': 'Error with service'}), status_code
-    except Exception as e:
-        logger.exception(f"Exception during handling {service}/{operation}: {str(e)}")
-        return jsonify({'error': 'Internal server error'}), 500
-
-
-
-
+@app.route('/<service>/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'])
+def gateway_handler(service, subpath):
+    """
+    General gateway handler to route requests to appropriate services and subpaths.
+    Forwards the request without modifying the path, query parameters, or body.
+    """
+    return forward_request(service, subpath)
 
 @app.route('/', methods=['GET'])
 def index():
     """Health check route."""
     return jsonify({"message": "API Gateway is running"}), 200
 
-
-
 # END OF ROUTES ----------------------------------------------------------------
-
-
-
 
 if __name__ == '__main__':
     # Run the Flask app

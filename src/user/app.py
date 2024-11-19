@@ -46,7 +46,7 @@ def register():
 @app.route('/get_user_from_name/<username>', methods=['GET'])
 def get_user_from_name(username):
     try:
-        response = requests.get(f"{DB_MANAGER_URL}/get_user_from_name/{username}")
+        response = requests.get(f"{DBM_URL}/get_user_from_name/{username}")
         response.raise_for_status()
         return jsonify(response.json()), 200
     except ConnectionError:

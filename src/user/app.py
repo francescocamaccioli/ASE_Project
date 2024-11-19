@@ -41,25 +41,18 @@ def register():
     else:
         return jsonify({"message": "User NOT registered successfully"}), 500
 
-   
+
     
-@app.route('/get_user_from_name', methods=['POST'])
-def get_user_from_name():
-    data = request.get_json()  # Ottieni i dati JSON dalla richiesta
-
-    # Verifica se i dati di input sono validi
-    if not data or 'username' not in data:
-        return make_response('Invalid input\n', 400)  # HTTP 400 BAD REQUEST
-
-    username = data['username']
+@app.route('/get_user_from_name/<username>', methods=['GET'])
+def get_user_from_name(username):
     try:
-        x = requests.post(DBM_URL + '/get_user_from_name', json=data)
-        x.raise_for_status()
-        return x.json()
+        response = requests.get(f"{DB_MANAGER_URL}/get_user_from_name/{username}")
+        response.raise_for_status()
+        return jsonify(response.json()), 200
     except ConnectionError:
         return make_response('DB Manager service is down\n', 500)
-    except requests.HTTPError:
-        return make_response(x.content, x.status_code)
+    except requests.HTTPError as http_err:
+        return make_response(http_err.response.content, http_err.response.status_code)
 
 if __name__ == '__main__':
     app.run(debug=True)

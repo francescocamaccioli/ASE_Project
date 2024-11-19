@@ -61,17 +61,14 @@ def register_user():
         return make_response(jsonify({"error": str(e)}), 502)
 
 # Endpoint per ottenere GLI utenti dal nome
-@app.route('/get_user_from_name', methods=['POST'])
-def get_user_from_name():
+@app.route('/get_user_from_name/<username>', methods=['GET'])
+def get_user_from_name(username):
     try:
-        payload = request.json
-        username = payload.get('username')
         res = []
         all = list(db_user.collection.find({"username": username}))
         for element in all:
             res.append({'username': element["username"], 'password': element["password"]})
         return make_response(jsonify(res), 200)
-        return make_response(json_util.dumps(users), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
 

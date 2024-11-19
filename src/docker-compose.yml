@@ -43,7 +43,7 @@ services:
       - "27017:27017"  # Porta esposta per il database
     volumes:
       - dbdata-gatcha:/data/db
-      - ./mongo/seed-data:/docker-entrypoint-initdb.d
+      - ./mongo/seed-data:/docker-entrypoint-initdb.d # mongo, all'avvio, esegue automaticamente tutti i file .js che trova in quella cartella. serve per popolare con i dati iniziali. see: https://stackoverflow.com/questions/42912755/how-to-create-a-db-for-mongodb-container-on-start-up/42917632#42917632
     environment:
       MONGO_INITDB_DATABASE: gatcha_db  # Nome del database per Gatcha
     command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati

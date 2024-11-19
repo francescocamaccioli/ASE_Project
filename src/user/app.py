@@ -28,6 +28,8 @@ def register():
     # Verifica se i dati di input sono validi
     if not data or 'username' not in data or 'password' not in data:
         return make_response('Invalid input\n', 400)  # HTTP 400 BAD REQUEST
+    
+    # TODO: controllare se l'utente esiste già: attualmente nel databse posso creare due utenti con lo stesso username
 
     # Salva l'utente nel database
 

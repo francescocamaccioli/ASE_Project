@@ -31,10 +31,12 @@ def service_request(url, data):
         return None
 
 # Endpoint per la registrazione degli utenti
-@app.route('/user/register/<username>/<password>')
-def register(username, password):
+@app.route('/user/register', methods=['POST'])
+def register():
+    data = request.json
     
-    data = {'username': username, 'password': password}
+    if not data or 'username' not in data or 'password' not in data:
+        return jsonify({'error': 'Username and password are required'}), 400
 
     try:
         # Effettua la richiesta POST al servizio user
@@ -120,3 +122,10 @@ def get_all_logs():
         return jsonify({'error': 'DB Manager service is unreachable'}), 500
     except HTTPError as e:
         return jsonify({'error': str(e), 'details': response.content.decode()}), response.status_code
+    
+
+# Root route
+@app.route('/')
+def index():
+    """Health check route."""
+    return jsonify({"message": "API Gateway is running"})

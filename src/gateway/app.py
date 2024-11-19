@@ -94,14 +94,14 @@ def get_user_from_name(username):
 @app.route('/gatcha/<op>')
 def gatcha(op):
     if op == 'roll':
-        return service_request(f"{GATCHA_URL}/{op}")
+        return service_request(f"{GATCHA_URL}/{op}", data=None)
     return jsonify({'error': 'Operation not supported'}), 400
 
 
-@app.route('/dbm/<op>')
+@app.route('/dbm/<op>', methods=['GET', 'POST'])
 def dbm_op(op):
     if op == 'checkconnection' and request.method == 'GET':
-        return service_request(f"{DB_MANAGER_URL}/checkconnection")
+        return service_request(f"{DB_MANAGER_URL}/checkconnection", data=None)
 
     if op == 'notify' and request.method == 'POST':
         data = request.json

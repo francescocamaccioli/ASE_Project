@@ -40,7 +40,7 @@ def insert_data_to_db(client, db_name, collection_name, data):
 def add_gatcha_data():
     data = request.json
     try:
-        insert_data_to_db(client_gatcha, 'gatcha_db', 'results', data) 
+        insert_data_to_db(client_gatcha, 'gatcha_db', 'gatchas', data) 
         return make_response(json_util.dumps({"message": "Data added to gatcha_db"}), 200)
     except Exception as e:
         return make_response(str(e), 500)
@@ -54,15 +54,29 @@ def roll_gatcha():
         selected_rarity = weighted_random_choice(RARITY_PROBABILITIES)
         
         # Query al database per ottenere un personaggio della rarità selezionata
-        gatcha_data = client_gatcha['gatcha_db']['results'] # TODO: perché chiamata results? cambiare nome?
+        gatcha_data = client_gatcha['gatcha_db']['gatchas'] # TODO: perché chiamata gatchas? cambiare nome?
         character = gatcha_data.find_one({'rarity': selected_rarity})
         
         # Gestisci l'eventualità che non ci sia un personaggio di quella rarità
         if not character:
             return make_response(f"No character found for rarity {selected_rarity}\n", 404)
         
+        # Increment NTot for the selected character
+        gatcha_data.update_one(
+            {'_id': character['_id']},  # Find the character by its unique ID
+            {'$inc': {'NTot': 1}}       # Increment the NTot field by 1
+        )
         
         return make_response(json_util.dumps(character), 200)
+    except Exception as e:
+        return make_response(str(e), 500)
+    
+# Endpoint per ottenere tutti i possibili gatcha
+@app.route('/getAllGatcha', methods=['GET'])
+def get_all_gatcha():
+    try:
+        all_gatcha = list(client_gatcha['gatcha_db']['gatchas'].find({}))
+        return make_response(json_util.dumps(all_gatcha), 200)
     except Exception as e:
         return make_response(str(e), 500)
 

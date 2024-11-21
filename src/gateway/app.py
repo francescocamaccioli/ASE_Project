@@ -13,7 +13,6 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# TODO: se poi scaliamo orizzontalmente creando più repliche di ogni servizio, come facciamo a dirottare le richieste alle varie repliche dei servizi?
 # Service URLs from environment variables with default values
 SERVICE_URLS = {
     'user': os.getenv('USER_URL', 'http://user:5000'),
@@ -21,6 +20,8 @@ SERVICE_URLS = {
     'market': os.getenv('MARKET_URL', 'http://market:5000'),
     'dbm': os.getenv('DBM_URL', 'http://db-manager:5000'),
 }
+
+# TODO: aggiungere una WHITELIST con gli endpoint che possono essere chiamati da questo gateway (default deny). questo perché questo endpoint è pubblico. dobbiamo evitare che possa chiamare endpoint sensibili riservati agli admin.
 
 def forward_request(service_name: str, subpath: str) -> Response:
     """

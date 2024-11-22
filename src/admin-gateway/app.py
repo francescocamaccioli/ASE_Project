@@ -21,7 +21,11 @@ SERVICE_URLS = {
     'dbm': os.getenv('DBM_URL'),
 }
 
-# TODO: aggiungere una WHITELIST con gli endpoint che possono essere chiamati da questo gateway (default deny). questo perché questo endpoint è pubblico. dobbiamo evitare che possa chiamare endpoint sensibili riservati agli admin.
+# ACCESS CONTROL ---------------------------------------------------------------
+
+# TODO: add JWT authentication etc
+
+# END OF ACCESS CONTROL --------------------------------------------------------
 
 def forward_request(service_name: str, subpath: str) -> Response:
     """

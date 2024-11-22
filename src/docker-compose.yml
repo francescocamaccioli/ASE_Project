@@ -1,5 +1,4 @@
 services:
-
   # Gateway Service
   gateway:
     build: ./gateway
@@ -7,30 +6,38 @@ services:
       - "5001:5000"
     depends_on:
       - gatcha
-      - user  
+      - user  # Commentato perché non necessario per Gacha
+      - market
     environment:
-      - GATCHA_URL=http://gatcha:5000  # URL per connettersi a Gatcha
-      - USER_URL=http://user:5000  # URL per connettersi a User
-      - MARKET_URL=http://market:5000  # URL per connettersi a marketDM
+    - GATCHA_URL=http://gatcha:5000
+    - USER_URL=http://user:5000
+    - MARKET_URL=http://market:5000
 
   # Gatcha service
   gatcha:
     build: ./gatcha
     depends_on:
-      - db-gatcha  # Aggiornato per dipendere da db-gatcha, non più dbm
+      - db-gatcha
     environment:
-      - USER_URL=http://user:5000  # URL per connettersi a Userdbm
-      - MARKET_URL=http://market:5000  # URL per connettersi a marketDM
-
+      - USER_URL=http://user:5000
+      - MARKET_URL=http://market:5000
 
   # User Service
   user:
     build: ./user
     depends_on:
-      - db-user # Aggiornato per dipendere da db-user, non più dbm
+      - db-user
     environment:
-      - GATCHA_URL=http://gatcha:5000  # URL per connettersi a Userdbm
-      - MARKET_URL=http://market:5000  # URL per connettersi a marketDM
+      - GATCHA_URL=http://gatcha:5000
+      - MARKET_URL=http://market:5000
+
+  market:
+    build: ./market
+    depends_on:
+      - db-market
+    environment:
+      - GATCHA_URL=http://gatcha:5000
+      - USER_URL=http://user:5000
 
   # MongoDB for gatcha (Database per il servizio Gatcha)
   db-gatcha:
@@ -55,6 +62,17 @@ services:
       MONGO_INITDB_DATABASE: user_db  # Nome del database per gli utenti
     command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
 
+  db-market:
+    image: mongo:latest
+    ports:
+      - "27019:27017"
+    volumes:
+      - dbdata-market:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: market_db
+    command: mongod --quiet --logpath /dev/null
+
 volumes:
   dbdata-gatcha:
   dbdata-user:  # Volume per db-user
+  dbdata-market:

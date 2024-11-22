@@ -16,6 +16,30 @@ The project is based on 5 microservices:
 
 ## How to run the project
 
+feature/market
 - execute the `docker compose up --build` command from the `src` directory
 - use any browser to use the following endpoints:
   - localhost:5001/
+
+1. Navigate to the src folder:
+    ```sh
+    cd ASE_Project/src
+    ```
+
+2. Build and start the services using Docker Compose:
+    ```sh
+    docker compose up --build
+    ```
+
+
+## The /docs folder
+
+Contains:
+- architecture.yml: the architecture diagram exported from MicroFreshner, can be imported into the web app to view the architecture
+
+TODO:
+- pdf report
+- openapi
+- export postman collection
+- locust file
+- copy of github actions workflow

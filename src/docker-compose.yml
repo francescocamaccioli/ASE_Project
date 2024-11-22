@@ -13,6 +13,20 @@ services:
     - USER_URL=http://user:5000
     - MARKET_URL=http://market:5000
 
+  # Gateway Service RESERVED FOR ADMINS, with access to privileged endpoints
+  admin-gateway:
+    build: ./gateway
+    ports:
+      - "5002:5000"
+    depends_on:
+      - gatcha
+      - user
+      - market
+    environment:
+    - GATCHA_URL=http://gatcha:5000
+    - USER_URL=http://user:5000
+    - MARKET_URL=http://market:5000
+
   # Gatcha service
   gatcha:
     build: ./gatcha

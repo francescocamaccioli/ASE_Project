@@ -6,7 +6,7 @@ services:
       - "5001:5000"
     depends_on:
       - gatcha
-      - user  # Commentato perché non necessario per Gacha
+      - user
       - market
     environment:
     - GATCHA_URL=http://gatcha:5000

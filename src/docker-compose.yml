@@ -92,4 +92,4 @@ volumes:
   dbdata-market:
 
 
-# TODO: mettere su docker network separate tipo come avevo fatto qui, però potrebbe volerci il bridge: https://github.com/francescocamaccioli/ASE_Project/compare/main...adding-admin-gateway#diff-cd2ae9f5a501d16253a461b919af1523e71916a984989885e6783203f4ee252a
+# TODO: mettere su docker network separate tipo come avevo fatto nel disegno, però potrebbe volerci il bridge invece che dover mettere il gateway su due network allo stesso tempo

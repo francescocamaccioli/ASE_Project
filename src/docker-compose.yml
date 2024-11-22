@@ -1,12 +1,5 @@
 services:
 
-  # DB Manager (Gestisce la logica di accesso ai vari DB)
-  db-manager:
-    build: ./dbm
-    environment:
-      - DB_GATCHA_URL=mongodb://db-gatcha:27017  # URL di connessione al database di Gatcha
-      - DB_USER_URL=mongodb://db-user:27017  # URL di connessione al database degli utenti
-
   # Gateway Service
   gateway:
     build: ./gateway
@@ -14,27 +7,30 @@ services:
       - "5001:5000"
     depends_on:
       - gatcha
-      - user  # Commentato perché non necessario per Gacha
-      - db-manager
+      - user  
     environment:
-    - DBM_URL=http://db-manager:5000  # URL per connettersi al DBM
-
+      - GATCHA_URL=http://gatcha:5000  # URL per connettersi a Gatcha
+      - USER_URL=http://user:5000  # URL per connettersi a User
+      - MARKET_URL=http://market:5000  # URL per connettersi a marketDM
 
   # Gatcha service
   gatcha:
     build: ./gatcha
     depends_on:
-      - db-manager  # Il servizio Gatcha dipende dal db-manager
+      - db-gatcha  # Aggiornato per dipendere da db-gatcha, non più dbm
     environment:
-      - DBM_URL=http://db-manager:5000  # URL per connettersi a DBM
+      - USER_URL=http://user:5000  # URL per connettersi a Userdbm
+      - MARKET_URL=http://market:5000  # URL per connettersi a marketDM
+
 
   # User Service
   user:
     build: ./user
     depends_on:
-      - db-manager  # Aggiornato per dipendere da db-manager, non più dbm
+      - db-user # Aggiornato per dipendere da db-user, non più dbm
     environment:
-      - DBM_URL=http://db-manager:5000  # URL per connettersi a DBM
+      - GATCHA_URL=http://gatcha:5000  # URL per connettersi a Userdbm
+      - MARKET_URL=http://market:5000  # URL per connettersi a marketDM
 
   # MongoDB for gatcha (Database per il servizio Gatcha)
   db-gatcha:

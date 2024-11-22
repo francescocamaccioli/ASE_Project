@@ -15,10 +15,10 @@ logger = logging.getLogger(__name__)
 
 # Service URLs from environment variables with default values
 SERVICE_URLS = {
-    'user': os.getenv('USER_URL', 'http://user:5000'),
-    'gatcha': os.getenv('GATCHA_URL', 'http://gatcha:5000'),
-    'market': os.getenv('MARKET_URL', 'http://market:5000'),
-    'dbm': os.getenv('DBM_URL', 'http://db-manager:5000'),
+    'user': os.getenv('USER_URL'),
+    'gatcha': os.getenv('GATCHA_URL'),
+    'market': os.getenv('MARKET_URL'),
+    'dbm': os.getenv('DBM_URL'),
 }
 
 # TODO: aggiungere una WHITELIST con gli endpoint che possono essere chiamati da questo gateway (default deny). questo perché questo endpoint è pubblico. dobbiamo evitare che possa chiamare endpoint sensibili riservati agli admin.

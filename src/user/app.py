@@ -1,58 +1,84 @@
 import os
 from flask import Flask, request, make_response, jsonify
 import requests
+from pymongo import MongoClient
 import time
+from pymongo.errors import ServerSelectionTimeoutError
 
 app = Flask(__name__)
 
-# DB Manager URL
-DBM_URL = os.getenv('DBM_URL', 'http://db-manager:5000')
-# Funzione per inviare i dati al db-manager
-def save_to_db(username, password):
-    payload = {'username': username, 'password': password}
-    try:
-        response = requests.post(f'{DBM_URL}/register', json=payload)
-        if response.status_code == 200:
-            return True
-        else:
-            return False
-    except requests.exceptions.RequestException as e:
-        print(f"Error connecting to DB manager: {e}")
-        return False
+# URLS dei microservizi
+GATCHA_URL = os.getenv('GATCHA_URL')
+MARKET_URL = os.getenv('MARKET_URL')
 
 
+
+# Connessione ai database dei microservizi (modificato per usare i container MongoDB tramite nome servizio)
+client_user = MongoClient("db-user", 27017, maxPoolSize=50)
+db_user= client_user["db_users"]
+
+def userExists(username):
+    return db_user.collection.find_one({"username": username}) is not None
+
+# Endpoint per registrare un utente passando i dati nel body della richiesta
 @app.route('/register', methods=['POST'])
-def register():
-    data = request.get_json()  # Ottieni i dati JSON dalla richiesta
-
-    # Verifica se i dati di input sono validi
-    if not data or 'username' not in data or 'password' not in data:
-        return make_response('Invalid input\n', 400)  # HTTP 400 BAD REQUEST
-    
-    # TODO: controllare se l'utente esiste già: attualmente nel databse posso creare due utenti con lo stesso username
-
-    # Salva l'utente nel database
-
-    response = requests.post(DBM_URL + "/register", json=data) ## WEI++AWDAWDAWDKJAWNFKAWNFl
-    if response.status_code == 200:
-        return jsonify({"message": "User registered successfully"}), 200
-
-
-    else:
-        return jsonify({"message": "User NOT registered successfully"}), 500
-
-
-    
-@app.route('/get_user_from_name/<username>', methods=['GET'])
-def get_user_from_name(username):
+def register_user():
     try:
-        response = requests.get(f"{DBM_URL}/get_user_from_name/{username}")
-        response.raise_for_status()
-        return jsonify(response.json()), 200
-    except ConnectionError:
-        return make_response('DB Manager service is down\n', 500)
-    except requests.HTTPError as http_err:
-        return make_response(http_err.response.content, http_err.response.status_code)
+        payload = request.json  # Ottieni i dati JSON dal corpo della richiesta 
+        if payload is None:
+            return make_response(jsonify({"error": "No data provided"}), 400)
+        
+        username = payload['username']
+        all = list(db_user.collection.find({'username': username}))
+        if len(all) > 0:
+            return make_response(jsonify({"error": "User already exists"}), 400)
+        else:
+            ## TODO: aggiungi jwt token
+            db_user.collection.insert_one(payload)
+        
+        return make_response(jsonify({"message": "User registered successfully"}), 200)
+
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 502)
+
+# Endpoint per ottenere un utente passando il nome utente nel body della richiesta
+@app.route('/get_user_from_name', methods=['GET'])
+def get_user_from_name():
+    data = request.get_json()  # Ottieni i dati JSON dalla richiesta
+    username = data['username']
+    try:
+        res = []
+        all = list(db_user.collection.find({'username': username}))
+        for element in all:
+            res.append({'username': element["username"], 'password': element["password"]})
+        return make_response(jsonify(res), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+    
+
+ # Endpoint per verificare la connessione al database
+@app.route('/checkconnection', methods=['GET'])
+def check_connection():
+    try:
+        # Esegui un ping al database per verificare la connessione
+        client_user.admin.command('ping')
+        return make_response(jsonify({"message": "Connection to db-gatcha is successful!"}), 200)
+    except ServerSelectionTimeoutError:
+        return make_response(jsonify({"error": "Failed to connect to db-gatcha"}), 500)
+    
+# Endpoint per recuperare tutti i log (da un database gatcha)
+@app.route('/getAll', methods=['GET'])
+def get_all_logs():
+    try:
+        res = []
+        all = list(db_user.collection.find({}))
+        for element in all:
+            res.append({'username': element["username"], 'password': element["password"]})
+        return make_response(jsonify(res), 200)
+    except Exception as e:
+        print("DEBUG: Error fetching logs:", str(e))
+        return make_response(str(e), 500)
+    
 
 if __name__ == '__main__':
     app.run(debug=True)

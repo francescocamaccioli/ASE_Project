@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, make_response, jsonify
 from pymongo import MongoClient
 import bson.json_util as json_util
@@ -20,8 +20,8 @@ def add_auction():
         # TODO: add User_ID here from JWT
         "starting_price": data.get("starting_price"),
         "current_price": data.get("starting_price"),
-        "creation time": datetime.utcnow(),
-        "end_time": datetime.utcnow() + datetime.timedelta(minutes=10)
+        "creation_time": datetime.now(),
+        "end_time": datetime.now() + timedelta(minutes=10)
     }
     try:
         Auctions.insert_one(auction)

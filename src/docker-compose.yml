@@ -13,6 +13,20 @@ services:
     - USER_URL=http://user:5000
     - MARKET_URL=http://market:5000
 
+  # Gateway Service RESERVED FOR ADMINS, with access to privileged endpoints
+  admin-gateway:
+    build: ./gateway
+    ports:
+      - "5002:5000"
+    depends_on:
+      - gatcha
+      - user
+      - market
+    environment:
+    - GATCHA_URL=http://gatcha:5000
+    - USER_URL=http://user:5000
+    - MARKET_URL=http://market:5000
+
   # Gatcha service
   gatcha:
     build: ./gatcha
@@ -43,7 +57,7 @@ services:
   db-gatcha:
     image: mongo:latest
     ports:
-      - "27017:27017"  # Porta esposta per il database
+      - "27017:27017"  # TODO: è esposta solo per debugging, da commentare in produzione.
     volumes:
       - dbdata-gatcha:/data/db
       - ./mongo/seed-data:/docker-entrypoint-initdb.d # mongo, all'avvio, esegue automaticamente tutti i file .js che trova in quella cartella. serve per popolare con i dati iniziali. see: https://stackoverflow.com/questions/42912755/how-to-create-a-db-for-mongodb-container-on-start-up/42917632#42917632
@@ -55,7 +69,7 @@ services:
   db-user:
     image: mongo:latest
     ports:
-      - "27018:27017"  # Host to container mapping
+      - "27018:27017"  # TODO: è esposta solo per debugging, da commentare in produzione.
     volumes:
       - dbdata-user:/data/db
     environment:
@@ -76,3 +90,6 @@ volumes:
   dbdata-gatcha:
   dbdata-user:  # Volume per db-user
   dbdata-market:
+
+
+# TODO: mettere su docker network separate tipo come avevo fatto qui, però potrebbe volerci il bridge: https://github.com/francescocamaccioli/ASE_Project/compare/main...adding-admin-gateway#diff-cd2ae9f5a501d16253a461b919af1523e71916a984989885e6783203f4ee252a

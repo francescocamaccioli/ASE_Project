@@ -95,5 +95,3 @@ def check_connection():
     except ServerSelectionTimeoutError:
         return make_response(jsonify({"error": "Failed to connect to db-gatcha"}), 500)
 
-if __name__ == '__main__':
-    app.run(debug=True)

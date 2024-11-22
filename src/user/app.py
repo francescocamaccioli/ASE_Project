@@ -78,7 +78,3 @@ def get_all_logs():
     except Exception as e:
         print("DEBUG: Error fetching logs:", str(e))
         return make_response(str(e), 500)
-    
-
-if __name__ == '__main__':
-    app.run(debug=True)

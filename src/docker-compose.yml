@@ -15,6 +15,7 @@ services:
     depends_on:
       - gatcha
       - user  # Commentato perché non necessario per Gacha
+      - market
       - db-manager
     environment:
     - DBM_URL=http://db-manager:5000  # URL per connettersi al DBM
@@ -35,6 +36,12 @@ services:
       - db-manager  # Aggiornato per dipendere da db-manager, non più dbm
     environment:
       - DBM_URL=http://db-manager:5000  # URL per connettersi a DBM
+
+  market:
+    build: ./market
+    environment:
+      - GATCHA_URL=http://gatcha:5000
+      - USER_URL=http://user:5000
 
   # MongoDB for gatcha (Database per il servizio Gatcha)
   db-gatcha:
@@ -59,6 +66,17 @@ services:
       MONGO_INITDB_DATABASE: user_db  # Nome del database per gli utenti
     command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
 
+  db-market:
+    image: mongo:latest
+    ports:
+      - "27019:27017"
+    volumes:
+      - dbdata-market:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: market_db
+    command: mongod --quiet --logpath /dev/null
+
 volumes:
   dbdata-gatcha:
   dbdata-user:  # Volume per db-user
+  dbdata-market:

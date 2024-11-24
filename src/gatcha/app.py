@@ -5,6 +5,7 @@ from flask import Flask, request, make_response
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 import bson.json_util as json_util
+import uuid
 
 
 # for handling image uploads to MinIO
@@ -18,6 +19,8 @@ install(show_locals=True)
 
 
 
+
+# region initializing vars ----------------------------------------
 
 RARITY_PROBABILITIES = {
     'comune': 0.5,       # 50%
@@ -51,6 +54,7 @@ validate_env_vars(
     MINIO_STORAGE_SECRET_KEY=MINIO_STORAGE_SECRET_KEY,
     MINIO_STORAGE_BUCKET_NAME=MINIO_STORAGE_BUCKET_NAME
 )
+# endregion initializing vars ----------------------------------------
 
 
 
@@ -102,11 +106,17 @@ except S3Error as e:
 # endregion Configurazione MinIO/S3 ----------------------------------------
 
 
+
+
 # Connessione ai database dei microservizi (modificato per usare i container MongoDB tramite nome servizio)
 client_gatcha = MongoClient("db-gatcha", 27017, maxPoolSize=50)
 db_gatcha= client_gatcha["db_gatcha"]
 
 app = Flask(__name__, instance_relative_config=True)
+
+
+
+# region utility functions ----------------------------------------
 
 def weighted_random_choice(rarities):
     # Selects a rarity based on the predefined probabilities.
@@ -127,16 +137,26 @@ def insert_data_to_db(client, db_name, collection_name, data):
     collection = db[collection_name]
     collection.insert_one(data)
 
+# endregion utility functions ----------------------------------------
 
 
 
 
 # Endpoint per aggiungere dati nel database gacha_db
 # TODO: aggiungere input validation per controllare che la richiesta sia come ce lo aspettiamo
+# TODO: può farla solo admin
 @app.route('/addgatchaData', methods=['POST'])
 def add_gatcha_data():
+    """
+    Admins can use this endpoint to add a new gatcha character to the database.
+
+    Request format. The request should be a multipart request that includes two parts:
+    - 'file': The image file to upload.
+    - 'json': The JSON payload containing other data.
+    """
+    
     if 'file' not in request.files or 'json' not in request.form:
-        return make_response(json_util.dumps({"error": "Both image file and JSON payload are required in the same request"}), 400)
+        return make_response(json_util.dumps({"error": "Both image file and JSON payload are required, as a multipart request."}), 400)
 
     file = request.files['file']
 
@@ -144,9 +164,11 @@ def add_gatcha_data():
         return make_response(json_util.dumps({"error": "No image file uploaded"}), 400)
 
     filename = secure_filename(file.filename)
-    filename = f"{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{filename}"
+    unique_id = uuid.uuid4().hex
+    filename = f"{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{unique_id}_{filename}" # create a unique filename
     destination_file_path = f"images/{filename}"
 
+    # Upload the file to MinIO bucket and get the image_url
     try:
         # Save the file to a temporary location
         temp_file_path = os.path.join('/tmp', filename)
@@ -157,6 +179,7 @@ def add_gatcha_data():
             bucket_name=MINIO_STORAGE_BUCKET_NAME, 
             object_name=destination_file_path, 
             file_path=temp_file_path,
+            content_type=file.content_type
         )
         print(
             f"File '{file.filename}' successfully uploaded as '{destination_file_path}' to bucket '{MINIO_STORAGE_BUCKET_NAME}'"
@@ -170,6 +193,7 @@ def add_gatcha_data():
         if os.path.exists(temp_file_path):
             os.remove(temp_file_path)
 
+    # take the JSON from the request, and add the image URL we just defined to it
     try:
         data = json_util.loads(request.form.get('json'))
     except Exception as e:
@@ -177,9 +201,12 @@ def add_gatcha_data():
 
     data['image'] = image_url
 
+    # insert the data into the database
     try:
         insert_data_to_db(client_gatcha, 'db-gatcha', 'db_gatcha', data)
-        return make_response(json_util.dumps({"message": "Data with image added to gatcha_db", "data": data}), 200)
+        response = make_response(json_util.dumps({"message": "Data with image added to gatcha_db", "data": data}), 200)
+        response.headers['Content-Type'] = 'application/json' # TODO: dovremmo fare così per tutti i response in JSON? agli altri manca
+        return response
     except Exception as e:
         return make_response(json_util.dumps({"error": f"Database insert failed: {str(e)}"}), 500)
 

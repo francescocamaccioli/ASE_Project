@@ -73,7 +73,7 @@ services:
       - dbdata-user:/data/db
     environment:
       MONGO_INITDB_DATABASE: user_db  # Nome del database per gli utenti
-    command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
+    command: mongod --quiet --logpath /var/log/mongodb/mongod.log  # Avvia MongoDB con log minimizzati
 
   db-market:
     image: mongo:latest

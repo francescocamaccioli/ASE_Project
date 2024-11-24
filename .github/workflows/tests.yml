@@ -1,29 +1,37 @@
 name: INTEGRATION AND UNIT TESTS
 
 on:
-    push:
-        branches: ["*"] # TODO: mettere solo per main?
-    pull_request:
-        branches: ["*"]
-    workflow_dispatch: # Permette di eseguire il workflow manualmente
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+  workflow_dispatch:
 
 jobs:
-    integration-tests:
-        name: Build and Test Everything (INTEGRATION TEST)
-        runs-on: ubuntu-latest
+  integration-tests:
+    name: Build and Test Everything (INTEGRATION TEST)
+    runs-on: ubuntu-latest
 
-        steps:
-            - uses: actions/checkout@v4
-            - name: Build and run the whole system using Docker Compose
-              run: docker compose -f src/docker-compose.yml up -d
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Install Node.js
-              uses: actions/setup-node@v4
+      - name: Build and run the whole system using Docker Compose
+        run: docker compose -f src/docker-compose.yml up -d
 
-            - name: Install Newman
-              run: npm install -g newman
+      - name: Install Node.js
+        uses: actions/setup-node@v4
 
-            - name: Run the tests
-                # TODO: prendere le env var direttamente da postman?
-                # TODO: usare .json come chiesto da professore invece che API?
-              run: newman run "https://api.postman.com/collections/26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}" --env-var "GATEWAY_URL=http://localhost:5001" --env-var "ADMIN_GATEWAY_URL=http://localhost:5002"
+      - name: Install Newman
+        run: npm install -g newman
+
+      - name: Run the tests
+        # TODO: prendere le env var direttamente da postman?
+        # TODO: usare .json come chiesto da professore invece che API?
+        run: newman run "https://api.postman.com/collections/26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}" --env-var "GATEWAY_URL=http://localhost:5001" --env-var "ADMIN_GATEWAY_URL=http://localhost:5002"
+      
+      - name: Output Docker Compose logs
+        if: always()
+        run: docker compose -f src/docker-compose.yml logs
+
+      - name: Stop Docker Compose
+        run: docker compose -f src/docker-compose.yml down

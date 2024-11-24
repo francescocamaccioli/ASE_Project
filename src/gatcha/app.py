@@ -94,7 +94,9 @@ def create_bucket(bucket_name):
     if not found:
         minio_client.make_bucket(bucket_name)
         print("Created bucket", bucket_name)
-        minio_client.set_bucket_policy(bucket_name, read_only_policy)  # Shortcut for read-only
+        policy_str = json_util.dumps(read_only_policy)  # Convert dictionary to JSON string
+        minio_client.set_bucket_policy(bucket_name, policy_str)
+        print("Bucket policy set to public")
         print("Bucket policy set to public")
     else:
         print("Bucket", bucket_name, "already exists")

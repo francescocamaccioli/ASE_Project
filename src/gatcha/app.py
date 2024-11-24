@@ -145,6 +145,7 @@ def insert_data_to_db(client, db_name, collection_name, data):
 # Endpoint per aggiungere dati nel database gacha_db
 # TODO: aggiungere input validation per controllare che la richiesta sia come ce lo aspettiamo
 # TODO: può farla solo admin
+# TODO: c'è un test già scritto, spostarlo in integration tests
 @app.route('/addgatchaData', methods=['POST'])
 def add_gatcha_data():
     """

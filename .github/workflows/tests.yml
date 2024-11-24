@@ -25,9 +25,10 @@ jobs:
         run: npm install -g newman
 
       - name: Run the tests
-        run: newman run "https://api.postman.com/collections/26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}" --env-var "GATEWAY_URL=http://localhost:5000"
-
+        run: newman run "https://api.postman.com/collections/26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}" --env-var "GATEWAY_URL=http://localhost:5001" --env-var "ADMIN_GATEWAY_URL=http://localhost:5002"
+      
       - name: Output Docker Compose logs
+        if: always()
         run: docker compose -f src/docker-compose.yml logs
 
       - name: Stop Docker Compose

@@ -60,7 +60,7 @@ validate_env_vars(
 
 
 
-# region Configurazione MinIO/S3 ----------------------------------------
+# region configuring MinIO ----------------------------------------
 
 # Configure S3 client
 minio_client = Minio(MINIO_STORAGE_URL,
@@ -78,17 +78,16 @@ def create_bucket(bucket_name):
                 "Effect": "Allow",
                 "Principal": {"AWS": "*"},
                 "Action": ["s3:GetBucketLocation", "s3:ListBucket"],
-                "Resource": "arn:aws:s3:::my-bucket",
+                "Resource": f"arn:aws:s3:::{bucket_name}",
             },
             {
                 "Effect": "Allow",
                 "Principal": {"AWS": "*"},
                 "Action": "s3:GetObject",
-                "Resource": "arn:aws:s3:::my-bucket/*",
+                "Resource": f"arn:aws:s3:::{bucket_name}/*",
             },
         ],
     }
-    
     
     found = minio_client.bucket_exists(bucket_name)
     if not found:
@@ -97,7 +96,6 @@ def create_bucket(bucket_name):
         policy_str = json_util.dumps(read_only_policy)  # Convert dictionary to JSON string
         minio_client.set_bucket_policy(bucket_name, policy_str)
         print("Bucket policy set to public")
-        print("Bucket policy set to public")
     else:
         print("Bucket", bucket_name, "already exists")
 
@@ -105,7 +103,7 @@ try:
     create_bucket(MINIO_STORAGE_BUCKET_NAME)
 except S3Error as e:
     print("Error while creating the bucker", e)
-# endregion Configurazione MinIO/S3 ----------------------------------------
+# endregion configuring MinIO  ----------------------------------------
 
 
 

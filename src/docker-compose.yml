@@ -118,7 +118,7 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin # Secret Key (Admin Password)
     command: server /data --console-address ":9001"  # Command to start the MinIO server
     volumes:
-      - ./minio-storage/data-volume:/data             # Persist data on the host machine
+      - minio-volume:/data             # Persist data on the host machine
 
 
 
@@ -127,6 +127,7 @@ volumes:
   dbdata-gatcha:
   dbdata-user:  # Volume per db-user
   dbdata-market:
+  minio-volume:  # Volume per i bucker MinIO
 
 
 # TODO: mettere su docker network separate tipo come avevo fatto nel disegno, però potrebbe volerci il bridge invece che dover mettere il gateway su due network allo stesso tempo

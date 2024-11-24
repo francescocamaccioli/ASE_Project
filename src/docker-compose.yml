@@ -12,6 +12,9 @@ services:
     - GATCHA_URL=http://gatcha:5000
     - USER_URL=http://user:5000
     - MARKET_URL=http://market:5000
+    - MINIO_STORAGE_URL=http://minio-storage:9000
+
+
 
   # Gateway Service RESERVED FOR ADMINS, with access to privileged endpoints
   admin-gateway:
@@ -32,9 +35,19 @@ services:
     build: ./gatcha
     depends_on:
       - db-gatcha
+      - minio-storage
+      - user
     environment:
       - USER_URL=http://user:5000
       - MARKET_URL=http://market:5000
+
+      - MINIO_STORAGE_URL=minio-storage:9000 # non mettere http:// o https:// perché lo mette da solo il client minio
+      - MINIO_STORAGE_ACCESS_KEY=minioadmin
+      - MINIO_STORAGE_SECRET_KEY=minioadmin
+      - MINIO_STORAGE_BUCKET_NAME=gachabucket
+
+
+
 
   # User Service
   user:
@@ -74,7 +87,7 @@ services:
       - dbdata-user:/data/db
     environment:
       MONGO_INITDB_DATABASE: user_db  # Nome del database per gli utenti
-    command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
+    command: mongod --quiet --logpath /var/log/mongodb/mongod.log  # Avvia MongoDB con log minimizzati
 
   db-market:
     image: mongo:latest
@@ -85,6 +98,29 @@ services:
     environment:
       MONGO_INITDB_DATABASE: market_db
     command: mongod --quiet --logpath /dev/null
+
+
+
+
+
+
+  # a service to store files (images, etc.) in a bucket (like AWS S3)
+  # documentation: https://github.com/minio/minio?tab=readme-ov-file#container-installation
+  minio-storage:
+    image: quay.io/minio/minio   # The MinIO image
+    container_name: minio-storage-container        # Optional: Name your container
+    ports:
+      - "9000:9000"              # MinIO API
+      - "9001:9001"              # MinIO Console
+    environment:
+      MINIO_ROOT_USER: minioadmin # Access Key (Admin User)
+      MINIO_ROOT_PASSWORD: minioadmin # Secret Key (Admin Password)
+    command: server /data --console-address ":9001"  # Command to start the MinIO server
+    volumes:
+      - ./minio-storage/data-volume:/data             # Persist data on the host machine
+
+
+
 
 volumes:
   dbdata-gatcha:

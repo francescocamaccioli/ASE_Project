@@ -3,11 +3,14 @@ FROM python:3.9-slim
 # Imposta la directory di lavoro nel container
 WORKDIR /app
 
-# Copia i file del progetto nel container
-COPY . /app
+# Copia solo il file delle dipendenze prima
+COPY requirements.txt /app/
 
 # Installa le dipendenze necessarie
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Copia i file del progetto nel container
+COPY . /app
 
 # Esponi la porta su cui l'app Flask girerà (5000)
 EXPOSE 5000

@@ -1,3 +1,5 @@
 Flask
 requests
 pymongo
+minio
+rich

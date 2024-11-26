@@ -5,6 +5,7 @@ from pymongo import MongoClient
 import datetime
 from pymongo.errors import ServerSelectionTimeoutError
 import uuid
+import bson.json_util as mongo_json
 
 import secrets
 import jwt
@@ -14,6 +15,7 @@ from rich.traceback import install
 install(show_locals=True)
 
 
+# Constants
 TOKEN_EXPIRATION_MINUTES = 30
 
 AUTH_DB_URL = os.getenv("AUTH_DB_URL")
@@ -21,15 +23,44 @@ AUTH_DB_NAME = os.getenv("AUTH_DB_NAME")
 JWT_SECRET = os.getenv("JWT_SECRET")
 
 
+
+# Initializations
 app = Flask(__name__)
 
 mongo_client = MongoClient(AUTH_DB_URL)
 auth_db= mongo_client[AUTH_DB_NAME]
 
 
+# adding to the database a test user
+# a test user, useful for debugging
+test_user = {
+    "username": "testuser",
+    "password": "password123", # TODO: hash the password, use salt etc
+    "email": "testuser@example.com",
+    "role": "normalUser" # TODO: derfinire ruoli, magari tipo normalUser e adminUser
+}
+
+# Insert the test user into the database
+try:
+    auth_db.users.insert_one(test_user)
+except ServerSelectionTimeoutError:
+    print("Could not connect to MongoDB server.")
 
 
-#TODO: register
+
+
+# region ROUTES DEFINITIONS -------------------------------
+
+#TODO: register route
+
+@app.route('/debug/users', methods=['GET'])
+def get_all_users():
+    try:
+        users = list(auth_db.users.find({}))  # Include all fields
+        return make_response(mongo_json.dumps(users), 200)
+    except ServerSelectionTimeoutError:
+        return jsonify({"error": "Could not connect to MongoDB server."}), 500
+
 
 
 @app.route('/oauth/token', methods=['POST'])
@@ -41,15 +72,16 @@ def token_endpoint():
     if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
     
-    # Validate credentials ( TODO: replace with actual user database lookup)
-    if username != "testuser" or password != "password123":
+    # Validate credentials (lookup from the database)
+    user = auth_db.users.find_one({"username": username})
+    if not user or user["password"] != password:
         return jsonify({"error": "Invalid credentials"}), 400
 
     # Generate tokens
     access_token = jwt.encode(
         {
             "sub": username, # JWT Subject: the user's ID
-            "role": "normalUser", # TODO: derfinire ruoli, magari tipo normalUser e adminUser
+            "role": user["role"],
             
             "iat": datetime.datetime.utcnow(), # JWT Issued At
             "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=TOKEN_EXPIRATION_MINUTES),
@@ -64,8 +96,8 @@ def token_endpoint():
     id_token = jwt.encode(
         {
             "sub": username,
-            "email": "testuser@example.com",
-            "role": "normalUser", # TODO: derfinire ruoli, magari tipo normalUser e adminUser
+            "email": user["email"],
+            "role": user["role"],
             "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=TOKEN_EXPIRATION_MINUTES)
         },
         JWT_SECRET,
@@ -141,3 +173,5 @@ def introspect_endpoint():
 @app.route('/', methods=['GET'])
 def hello():
     return "Hello, this is the auth service!"
+
+# endregion ROUTES DEFINITIONS

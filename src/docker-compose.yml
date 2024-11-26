@@ -13,6 +13,7 @@ services:
     - USER_URL=http://user:5000
     - MARKET_URL=http://market:5000
     - MINIO_STORAGE_URL=http://minio-storage:9000
+    - AUTH_URL=http://auth:5000
 
 
 
@@ -29,6 +30,32 @@ services:
     - GATCHA_URL=http://gatcha:5000
     - USER_URL=http://user:5000
     - MARKET_URL=http://market:5000
+    - AUTH_URL=http://auth:5000
+
+
+
+
+  auth:
+    build: ./auth
+    depends_on:
+      - auth-db
+      # - user # TODO: dipende da user?
+    environment:
+      - AUTH_DB_URL=auth-db:27017
+      - AUTH_DB_NAME=auth_db
+      - JWT_SECRET=supersecret # only for development
+  
+
+  auth-db:
+    image: mongo:latest
+    ports:
+      - "27016:27017"  # TODO: è esposta solo per debugging, da commentare in produzione.
+    volumes:
+      - dbdata-auth:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: auth_db  # Nome del database per l'autenticazione
+    command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
+
 
   # Gatcha service
   gatcha:
@@ -126,6 +153,7 @@ services:
 volumes:
   dbdata-gatcha:
   dbdata-user:  # Volume per db-user
+  dbdata-auth: # Volume per db-auth
   dbdata-market:
   minio-volume:  # Volume per i bucker MinIO
 

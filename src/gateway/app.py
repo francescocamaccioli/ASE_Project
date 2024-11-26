@@ -19,7 +19,8 @@ SERVICE_URLS = {
     'gatcha': os.getenv('GATCHA_URL'),
     'market': os.getenv('MARKET_URL'),
     'dbm': os.getenv('DBM_URL'),
-    'storage': os.getenv('MINIO_STORAGE_URL')
+    'storage': os.getenv('MINIO_STORAGE_URL'),
+    'auth': os.getenv('AUTH_URL')
 }
 
 # TODO: aggiungere una WHITELIST con gli endpoint che possono essere chiamati da questo gateway (default deny). questo perché questo endpoint è pubblico. dobbiamo evitare che possa chiamare endpoint sensibili riservati agli admin.

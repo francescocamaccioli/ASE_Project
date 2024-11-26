@@ -2,79 +2,142 @@ import os
 from flask import Flask, request, make_response, jsonify
 import requests
 from pymongo import MongoClient
-import time
+import datetime
 from pymongo.errors import ServerSelectionTimeoutError
+import uuid
+
+import secrets
+import jwt
+
+# for better error messages
+from rich.traceback import install
+install(show_locals=True)
+
+
+TOKEN_EXPIRATION_MINUTES = 30
+
+AUTH_DB_URL = os.getenv("AUTH_DB_URL")
+AUTH_DB_NAME = os.getenv("AUTH_DB_NAME")
+JWT_SECRET = os.getenv("JWT_SECRET")
+
 
 app = Flask(__name__)
 
-# URLS dei microservizi
-GATCHA_URL = os.getenv('GATCHA_URL')
-MARKET_URL = os.getenv('MARKET_URL')
+mongo_client = MongoClient(AUTH_DB_URL)
+auth_db= mongo_client[AUTH_DB_NAME]
 
 
 
-# Connessione ai database dei microservizi (modificato per usare i container MongoDB tramite nome servizio)
-client_user = MongoClient("db-user", 27017, maxPoolSize=50)
-db_user= client_user["db_users"]
 
-def userExists(username):
-    return db_user.collection.find_one({"username": username}) is not None
+#TODO: register
 
-# Endpoint per registrare un utente passando i dati nel body della richiesta
-@app.route('/register', methods=['POST'])
-def register_user():
+
+@app.route('/oauth/token', methods=['POST'])
+def token_endpoint():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+
+    if not username or not password:
+        return jsonify({"error": "Username and password are required"}), 400
+    
+    # Validate credentials ( TODO: replace with actual user database lookup)
+    if username != "testuser" or password != "password123":
+        return jsonify({"error": "Invalid credentials"}), 400
+
+    # Generate tokens
+    access_token = jwt.encode(
+        {
+            "sub": username, # JWT Subject: the user's ID
+            "role": "normalUser", # TODO: derfinire ruoli, magari tipo normalUser e adminUser
+            
+            "iat": datetime.datetime.utcnow(), # JWT Issued At
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=TOKEN_EXPIRATION_MINUTES),
+            
+            "iss": "https://auth.example.com", # JWT Issuer
+            "jti": str(uuid.uuid4()) # JWT ID: univocal identifier for the token
+        },
+        JWT_SECRET,
+        algorithm="HS256"
+    )
+    
+    id_token = jwt.encode(
+        {
+            "sub": username,
+            "email": "testuser@example.com",
+            "role": "normalUser", # TODO: derfinire ruoli, magari tipo normalUser e adminUser
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=TOKEN_EXPIRATION_MINUTES)
+        },
+        JWT_SECRET,
+        algorithm="HS256"
+    )
+
+    return jsonify({
+        "access_token": access_token,
+        "id_token": id_token,
+        "token_type": "Bearer"
+    })
+
+
+
+
+
+
+"""
+Provides user profile data about the authenticated user, based on the claims contained in the access token.
+Process:
+- Accepts a valid access token (Bearer Token) in the Authorization header.
+- Extracts user claims (like username, email) from the token. 
+"""
+@app.route('/userinfo', methods=['GET'])
+def userinfo_endpoint():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized. your request doesn't contain an authorization header."}), 401
+
+    token = auth_header.split(" ")[1]
     try:
-        payload = request.json  # Ottieni i dati JSON dal corpo della richiesta 
-        if payload is None:
-            return make_response(jsonify({"error": "No data provided"}), 400)
-        
-        username = payload['username']
-        all = list(db_user.collection.find({'username': username}))
-        if len(all) > 0:
-            return make_response(jsonify({"error": "User already exists"}), 400)
-        else:
-            ## TODO: aggiungi jwt token
-            db_user.collection.insert_one(payload)
-        
-        return make_response(jsonify({"message": "User registered successfully"}), 200)
+        claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        return jsonify({
+            "sub": claims["sub"],  # User ID
+            "email": claims.get("email", None)
+        })
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token expired"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Invalid token"}), 401
 
-    except Exception as e:
-        return make_response(jsonify({"error": str(e)}), 502)
 
-# Endpoint per ottenere un utente passando il nome utente nel body della richiesta
-@app.route('/get_user_from_name', methods=['GET'])
-def get_user_from_name():
-    data = request.get_json()  # Ottieni i dati JSON dalla richiesta
-    username = data['username']
+
+
+
+"""
+TODO: ue use this ONLY if we use CENTRALIZED token validation
+
+Validates the access token. This endpoint is called directly by microservices or the API Gateway, IF we use centralized token validation.
+Process :
+- Accepts a token in the request body.
+- Validates the token and returns metadata (e.g., user ID, expiration) or an error.
+"""
+@app.route('/introspect', methods=['POST'])
+def introspect_endpoint():
+    token = request.form.get("token")
+
     try:
-        res = []
-        all = list(db_user.collection.find({'username': username}))
-        for element in all:
-            res.append({'username': element["username"], 'password': element["password"]})
-        return make_response(jsonify(res), 200)
-    except Exception as e:
-        return make_response(jsonify({"error": str(e)}), 500)
+        claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        return jsonify({
+            "active": True,
+            "sub": claims["sub"],
+            "exp": claims["exp"]
+        })
+    except jwt.ExpiredSignatureError:
+        return jsonify({"active": False, "error": "Token expired"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"active": False, "error": "Invalid token"}), 401 
     
 
- # Endpoint per verificare la connessione al database
-@app.route('/checkconnection', methods=['GET'])
-def check_connection():
-    try:
-        # Esegui un ping al database per verificare la connessione
-        client_user.admin.command('ping')
-        return make_response(jsonify({"message": "Connection to db-gatcha is successful!"}), 200)
-    except ServerSelectionTimeoutError:
-        return make_response(jsonify({"error": "Failed to connect to db-gatcha"}), 500)
-    
-# Endpoint per recuperare tutti i log (da un database gatcha)
-@app.route('/getAll', methods=['GET'])
-def get_all_logs():
-    try:
-        res = []
-        all = list(db_user.collection.find({}))
-        for element in all:
-            res.append({'username': element["username"], 'password': element["password"]})
-        return make_response(jsonify(res), 200)
-    except Exception as e:
-        print("DEBUG: Error fetching logs:", str(e))
-        return make_response(str(e), 500)
+
+
+@app.route('/', methods=['GET'])
+def hello():
+    return "Hello, this is the auth service!"

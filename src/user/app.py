@@ -56,7 +56,7 @@ def get_user_from_name():
         return make_response(jsonify({"error": str(e)}), 500)
     
 
- # Endpoint per verificare la connessione al database
+# Endpoint per verificare la connessione al database
 @app.route('/checkconnection', methods=['GET'])
 def check_connection():
     try:

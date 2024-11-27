@@ -2,6 +2,9 @@
 # This file contains utility functions for decentralized authentication and authorization
 # to be used inside each microservice.
 
+# ATTENZIONE: OGNI VOLTA CHE SI MODIFICA, LA NUOVA VERSIONE VA COPIATA IN TUTTI I MICROSERVIZI
+# TODO: trovare un modo migliore
+
 import jwt
 from flask import request, jsonify
 

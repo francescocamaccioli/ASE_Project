@@ -1,6 +1,7 @@
 import jwt
 from flask import request, jsonify
 from functools import wraps
+from os import getenv
 
 # SHARED FILE
 # This file contains utility functions for decentralized authentication and authorization
@@ -10,7 +11,10 @@ from functools import wraps
 # TODO: trovare un modo migliore
 
 
-JWT_SECRET = "supersecret" # TODO: decidere qual è la source of truth per il secret
+JWT_SECRET = getenv("JWT_SECRET")
+
+if not JWT_SECRET or JWT_SECRET.strip() == "":
+    raise ValueError("JWT_SECRET environment variable is not set or is empty")
 
 
 

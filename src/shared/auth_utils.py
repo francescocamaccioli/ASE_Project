@@ -1,3 +1,7 @@
+import jwt
+from flask import request, jsonify
+from functools import wraps
+
 # SHARED FILE
 # This file contains utility functions for decentralized authentication and authorization
 # to be used inside each microservice.
@@ -5,8 +9,6 @@
 # ATTENZIONE: OGNI VOLTA CHE SI MODIFICA, LA NUOVA VERSIONE VA COPIATA IN TUTTI I MICROSERVIZI
 # TODO: trovare un modo migliore
 
-import jwt
-from flask import request, jsonify
 
 JWT_SECRET = "supersecret" # TODO: decidere qual è la source of truth per il secret
 
@@ -38,6 +40,7 @@ def role_required(required_role):
     If the JWT you sent doesn't contain the required_role, you won't be authorized to continue.
     """
     def decorator(func):
+        @wraps(func)
         def wrapper(*args, **kwargs):
             token_payload, error = decode_token()
             if error:
@@ -69,7 +72,3 @@ def get_username_from_jwt():
     if not username:
         raise ValueError('Username not found in token')
     return username
-    
-    
-    
-    

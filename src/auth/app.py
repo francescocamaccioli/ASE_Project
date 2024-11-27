@@ -178,17 +178,30 @@ def introspect_endpoint():
 
 # region TEST ROUTES -------------------------------
 
+# Questi test possono essere esempi utili su come usare auth_utils.py per fare auntenticazione e autorizzazione negli altri microservizi
+
 @app.route('/test', methods=['GET'])
 def hello():
     return "Hello, this is the auth service!"
 
 
+# Requests to this route should succeed
+# ONLY if you present a token of a normalUser
 @app.route('/test/normaluseronly', methods=['GET'])
 @role_required("normalUser")
 def normal_user_only():
     return jsonify({"message": "You successfully accessed a normal user-only endpoint."})
 
+# Requests to this route should succeed
+# ONLY if you present a token of an adminUser
+@app.route('/test/adminuseronly', methods=['GET'])
+@role_required("adminUser")
+def admin_user_only():
+    return jsonify({"message": "You successfully accessed an admin user-only endpoint."})
 
+
+# When you send a request to this route, you also send you JWT token.
+# It extracs the username from the JWT, and echoes it to you.
 @app.route('/test/echousername', methods=['GET'])
 def echo_username():
     try:

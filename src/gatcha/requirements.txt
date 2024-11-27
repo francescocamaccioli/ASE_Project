@@ -3,3 +3,4 @@ requests
 pymongo
 minio
 rich
+pyjwt

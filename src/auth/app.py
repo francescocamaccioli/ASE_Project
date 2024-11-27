@@ -9,6 +9,7 @@ import bson.json_util as mongo_json
 
 import secrets
 import jwt
+from auth_utils import role_required, get_username_from_jwt
 
 # for better error messages
 from rich.traceback import install
@@ -76,6 +77,8 @@ def token_endpoint():
     user = auth_db.users.find_one({"username": username})
     if not user or user["password"] != password:
         return jsonify({"error": "Invalid credentials"}), 400
+
+    # TODO: generare sia id_token che access_token? o solo uno dei due?
 
     # Generate tokens
     access_token = jwt.encode(
@@ -169,9 +172,33 @@ def introspect_endpoint():
     
 
 
+# endregion ROUTES DEFINITIONS
 
-@app.route('/', methods=['GET'])
+
+
+# region TEST ROUTES -------------------------------
+
+@app.route('/test', methods=['GET'])
 def hello():
     return "Hello, this is the auth service!"
 
-# endregion ROUTES DEFINITIONS
+
+@app.route('/test/normaluseronly', methods=['GET'])
+@role_required("normalUser")
+def normal_user_only():
+    return jsonify({"message": "You successfully accessed a normal user-only endpoint."})
+
+
+@app.route('/test/echousername', methods=['GET'])
+def echo_username():
+    try:
+        username = get_username_from_jwt()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 401
+
+    return jsonify({
+        "message": "Your username was successfully extracted from the JWT token you sent with this request",
+        "username": username
+    })
+
+# endregion TEST ROUTES

@@ -241,7 +241,7 @@ def roll_gatcha():
             {'$inc': {'NTot': 1}}       # Incrementa il campo NTot di 1
         )
 
-        ##TODO Communicate with user to update his collection
+        ##TODO: dal JWT, prendi il nome utente, e aggiungerai il gatcha all'utente che ha quel nome utente; il JWT ci certifica che il nome utente che c'è scritto dentro appartiene davevro al proprietario (è autenticato
         
         return make_response(json_util.dumps(character), 200)
     except Exception as e:

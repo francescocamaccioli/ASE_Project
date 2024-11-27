@@ -37,7 +37,7 @@ auth_db= mongo_client[AUTH_DB_NAME]
 test_user = {
     "username": "testuser",
     "password": "password123", # TODO: hash the password, use salt etc
-    "email": "testuser@example.com",
+    "email": "testuser@example.com", # TODO: serve?
     "role": "normalUser" # TODO: derfinire ruoli, magari tipo normalUser e adminUser
 }
 
@@ -54,6 +54,9 @@ except ServerSelectionTimeoutError:
 
 #TODO: register route
 
+
+# Ritorna tutti gli utenti contenenti nel database
+# questa route serve solo per il debug, ovviamente in preoduzione non dovrebbe esistere
 @app.route('/debug/users', methods=['GET'])
 def get_all_users():
     try:
@@ -78,8 +81,6 @@ def token_endpoint():
     if not user or user["password"] != password:
         return jsonify({"error": "Invalid credentials"}), 400
 
-    # TODO: generare sia id_token che access_token? o solo uno dei due?
-
     # Generate tokens
     access_token = jwt.encode(
         {
@@ -96,20 +97,20 @@ def token_endpoint():
         algorithm="HS256"
     )
     
-    id_token = jwt.encode(
-        {
-            "sub": username,
-            "email": user["email"],
-            "role": user["role"],
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=TOKEN_EXPIRATION_MINUTES)
-        },
-        JWT_SECRET,
-        algorithm="HS256"
-    )
+    # TODO: lo ho commentato perché basta access_token. Va bene? Oppure serve per via dello standard?
+    # id_token = jwt.encode(
+    #     {
+    #         "sub": username,
+    #         "email": user["email"],
+    #         "role": user["role"],
+    #         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=TOKEN_EXPIRATION_MINUTES)
+    #     },
+    #     JWT_SECRET,
+    #     algorithm="HS256"
+    # )
 
     return jsonify({
         "access_token": access_token,
-        "id_token": id_token,
         "token_type": "Bearer"
     })
 
@@ -122,7 +123,7 @@ def token_endpoint():
 Provides user profile data about the authenticated user, based on the claims contained in the access token.
 Process:
 - Accepts a valid access token (Bearer Token) in the Authorization header.
-- Extracts user claims (like username, email) from the token. 
+- Extracts user claims (like username - called "sub") from the token. 
 """
 @app.route('/userinfo', methods=['GET'])
 def userinfo_endpoint():
@@ -135,7 +136,6 @@ def userinfo_endpoint():
         claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         return jsonify({
             "sub": claims["sub"],  # User ID
-            "email": claims.get("email", None)
         })
     except jwt.ExpiredSignatureError:
         return jsonify({"error": "Token expired"}), 401

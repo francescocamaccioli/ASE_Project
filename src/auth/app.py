@@ -37,13 +37,21 @@ auth_db= mongo_client[AUTH_DB_NAME]
 test_user = {
     "username": "testuser",
     "password": "password123", # TODO: hash the password, use salt etc
-    "email": "testuser@example.com", # TODO: serve?
+    "email": "testuser@example.com", # TODO: la email serve?
     "role": "normalUser" # TODO: derfinire ruoli, magari tipo normalUser e adminUser
+}
+
+test_admin_user = {
+    "username": "adminuser",
+    "password": "password123",
+    "email": "adminuser@example.com",
+    "role": "adminUser"
 }
 
 # Insert the test user into the database
 try:
     auth_db.users.insert_one(test_user)
+    auth_db.users.insert_one(test_admin_user)
 except ServerSelectionTimeoutError:
     print("Could not connect to MongoDB server.")
 

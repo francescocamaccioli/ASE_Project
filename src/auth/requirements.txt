@@ -1,4 +1,5 @@
 Flask
 requests
 pymongo
+rich
 pyjwt

@@ -2,3 +2,4 @@ Flask
 requests
 Werkzeug
 pymongo
+pyjwt

@@ -1,3 +1,16 @@
+version: '3.8'
+
+
+# Definisce un campo di estensione
+# serve per evitare di ripetere le stesse variabili in più servizi, senza dover fare copia-incolla
+x-common-environment:
+  &common-env
+  JWT_SECRET: supersecret # only for development, in production we would use a secure secret and a secret manager
+  GATCHA_URL: http://gatcha:5000
+  USER_URL: http://user:5000
+  MARKET_URL: http://market:5000
+  AUTH_URL: http://auth:5000
+
 services:
   # Gateway Service
   gateway:
@@ -9,12 +22,8 @@ services:
       - user
       - market
     environment:
-    - GATCHA_URL=http://gatcha:5000
-    - USER_URL=http://user:5000
-    - MARKET_URL=http://market:5000
-    - MINIO_STORAGE_URL=http://minio-storage:9000
-
-
+      <<: *common-env
+      MINIO_STORAGE_URL: http://minio-storage:9000
 
   # Gateway Service RESERVED FOR ADMINS, with access to privileged endpoints
   admin-gateway:
@@ -26,9 +35,27 @@ services:
       - user
       - market
     environment:
-    - GATCHA_URL=http://gatcha:5000
-    - USER_URL=http://user:5000
-    - MARKET_URL=http://market:5000
+      <<: *common-env
+
+  auth:
+    build: ./auth
+    depends_on:
+      - auth-db
+      # - user # TODO: dipende da user?
+    environment:
+      <<: *common-env
+      AUTH_DB_URL: auth-db:27017
+      AUTH_DB_NAME: auth_db
+
+  auth-db:
+    image: mongo:latest
+    ports:
+      - "27016:27017"  # TODO: è esposta solo per debugging, da commentare in produzione.
+    volumes:
+      - dbdata-auth:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: auth_db  # Nome del database per l'autenticazione
+    command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
 
   # Gatcha service
   gatcha:
@@ -38,16 +65,11 @@ services:
       - minio-storage
       - user
     environment:
-      - USER_URL=http://user:5000
-      - MARKET_URL=http://market:5000
-
-      - MINIO_STORAGE_URL=minio-storage:9000 # non mettere http:// o https:// perché lo mette da solo il client minio
-      - MINIO_STORAGE_ACCESS_KEY=minioadmin
-      - MINIO_STORAGE_SECRET_KEY=minioadmin
-      - MINIO_STORAGE_BUCKET_NAME=gachabucket
-
-
-
+      <<: *common-env
+      MINIO_STORAGE_URL: minio-storage:9000 # non mettere http:// o https:// perché lo mette da solo il client minio
+      MINIO_STORAGE_ACCESS_KEY: minioadmin
+      MINIO_STORAGE_SECRET_KEY: minioadmin
+      MINIO_STORAGE_BUCKET_NAME: gachabucket
 
   # User Service
   user:
@@ -55,16 +77,14 @@ services:
     depends_on:
       - db-user
     environment:
-      - GATCHA_URL=http://gatcha:5000
-      - MARKET_URL=http://market:5000
+      <<: *common-env
 
   market:
     build: ./market
     depends_on:
       - db-market
     environment:
-      - GATCHA_URL=http://gatcha:5000
-      - USER_URL=http://user:5000
+      <<: *common-env
 
   # MongoDB for gatcha (Database per il servizio Gatcha)
   db-gatcha:
@@ -99,11 +119,6 @@ services:
       MONGO_INITDB_DATABASE: market_db
     command: mongod --quiet --logpath /dev/null
 
-
-
-
-
-
   # a service to store files (images, etc.) in a bucket (like AWS S3)
   # documentation: https://github.com/minio/minio?tab=readme-ov-file#container-installation
   # if you open http://localhost:9001 from your browser, you can see the MinIO console
@@ -120,14 +135,11 @@ services:
     volumes:
       - minio-volume:/data             # Persist data on the host machine
 
-
-
-
 volumes:
   dbdata-gatcha:
   dbdata-user:  # Volume per db-user
+  dbdata-auth: # Volume per db-auth
   dbdata-market:
   minio-volume:  # Volume per i bucker MinIO
-
 
 # TODO: mettere su docker network separate tipo come avevo fatto nel disegno, però potrebbe volerci il bridge invece che dover mettere il gateway su due network allo stesso tempo

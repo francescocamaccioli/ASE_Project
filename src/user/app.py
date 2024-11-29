@@ -2,7 +2,7 @@ import os
 from flask import Flask, request, make_response, jsonify
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
-from auth_utils import decode_token, role_required
+from auth_utils import decode_token, role_required, get_username_from_jwt
 
 app = Flask(__name__)
 
@@ -65,14 +65,12 @@ def get_user_from_name():
 
 # endpoint to increase the balance of a user
 @app.route('/increase_balance', methods=['POST'])
-@role_required('admin')
 def increase_balance():
-    token_payload, error = decode_token()
-    if error:
-        return make_response(jsonify({"error": error}), 401)
-    
+    try: 
+        username = get_username_from_jwt()
+    except Exception as e:
+        return make_response(jsonify({"error": "Error decoding token"}), 401)
     data = request.json
-    username = data.get("username")
     amount = data.get("amount")
     try:
         user = db_user.collection.find_one({"username": username})
@@ -83,6 +81,27 @@ def increase_balance():
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
     
+# endpoint to decrease the balance of a user
+# must be usable only by roll and after an auction win
+@app.route('/decrease_balance', methods=['POST'])
+def decrease_balance():  
+    try: 
+        username = get_username_from_jwt()
+    except Exception as e:
+        return make_response(jsonify({"error": "Error decoding token"}), 401)
+    data = request.json
+    amount = data.get("amount")
+    try:
+        user = db_user.collection.find_one({"username": username})
+        if user is None:
+            return make_response(jsonify({"error": "User not found"}), 404)
+        if user["balance"] < amount:
+            return make_response(jsonify({"error": "Insufficient funds"}), 400)
+        db_user.collection.update_one({"username": username}, {"$inc": {"balance": -amount}})
+        return make_response(jsonify({"message": "Balance updated successfully"}), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+
 
 # Endpoint per verificare la connessione al database
 @app.route('/checkconnection', methods=['GET'])

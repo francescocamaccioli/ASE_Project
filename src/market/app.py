@@ -16,10 +16,11 @@ def add_auction():
     data = request.json
     auction = {
         "Auction_ID": Auctions.count_documents({}) + 1, # TODO: maybe add hash here (?)
-        "Gatcha_ID": data.get("GatchaID"), # TODO: controllare che hai il gacha che vuoi vendere
-        # TODO: add User_ID here from JWT
+        "Gatcha_ID": data.get("GatchaID"),
+        # TODO: add User_ID from auctioner here from JWT
+        # TODO: add another User_ID initialized on empty for the highest bidder
         "starting_price": data.get("starting_price"),
-        "current_price": data.get("starting_price"),
+        "current_price": data.get("starting_price"), # current highest bid value, to be refounded if another higher bid is placed
         "creation_time": datetime.now(),
         "end_time": datetime.now() + timedelta(minutes=10)
     }
@@ -51,7 +52,7 @@ def bid():
     bid = {
         "Bid_ID": Bids.count_documents({}) + 1,
         "Auction_ID": data.get("Auction_ID"),
-        "User_ID": data.get("User_ID"),
+        "User_ID": data.get("User_ID"), # TODO: User_ID of bidder from JWT
         "amount": data.get("amount"),
         "timestamp": data.get("timestamp")
     }

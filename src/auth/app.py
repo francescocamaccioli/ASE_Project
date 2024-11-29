@@ -56,13 +56,6 @@ except ServerSelectionTimeoutError:
     print("Could not connect to MongoDB server.")
 
 
-# # Insert the test user into the database
-# try:
-#     auth_db.users.insert_one(test_user)
-# except ServerSelectionTimeoutError:
-#     print("Could not connect to MongoDB server.")
-
-
 # region ROUTES DEFINITIONS -------------------------------
 
 @app.route('/register', methods=['POST'])
@@ -91,8 +84,8 @@ def register_user():
         # Requires at least one special character (@, $, !, %, *, ?, &).
         # Requires at least 8 characters long and includes valid characters only.
         
-        # if not re.match(r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", #payload['password']):
-        #    return make_response(jsonify({"error": "Invalid password"}), 400)
+        # if not re.match(r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", payload['password']):
+        #     return make_response(jsonify({"error": "Invalid password"}), 400)
          
         if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", payload['email']):
             return make_response(jsonify({"error": "Invalid email"}), 400)

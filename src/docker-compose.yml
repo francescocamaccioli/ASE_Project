@@ -1,6 +1,3 @@
-version: '3.8'
-
-
 # Definisce un campo di estensione
 # serve per evitare di ripetere le stesse variabili in più servizi, senza dover fare copia-incolla
 x-common-environment:

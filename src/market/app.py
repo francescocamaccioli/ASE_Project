@@ -16,7 +16,7 @@ def add_auction():
     data = request.json
     auction = {
         "Auction_ID": Auctions.count_documents({}) + 1, # TODO: maybe add hash here (?)
-        "Gatcha_ID": data.get("GatchaID"),
+        "Gatcha_ID": data.get("GatchaID"), # TODO: controllare che hai il gacha che vuoi vendere
         # TODO: add User_ID here from JWT
         "starting_price": data.get("starting_price"),
         "current_price": data.get("starting_price"),

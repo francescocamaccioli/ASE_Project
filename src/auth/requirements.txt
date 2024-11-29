@@ -3,3 +3,4 @@ requests
 pymongo
 rich
 pyjwt
+bcrypt

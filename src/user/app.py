@@ -1,9 +1,8 @@
 import os
 from flask import Flask, request, make_response, jsonify
-import requests
 from pymongo import MongoClient
-import time
 from pymongo.errors import ServerSelectionTimeoutError
+from auth_utils import decode_token, role_required
 
 app = Flask(__name__)
 
@@ -21,23 +20,27 @@ def userExists(username):
     return db_user.collection.find_one({"username": username}) is not None
 
 # Endpoint per registrare un utente passando i dati nel body della richiesta
-@app.route('/register', methods=['POST'])
-def register_user():
+@app.route('/init-user', methods=['POST'])
+def init_user():
     try:
         payload = request.json  # Ottieni i dati JSON dal corpo della richiesta 
         if payload is None:
             return make_response(jsonify({"error": "No data provided"}), 400)
         
-        username = payload['username']
-        all = list(db_user.collection.find({'username': username}))
-        if len(all) > 0:
-            return make_response(jsonify({"error": "User already exists"}), 400)
-        else:
-            ## TODO: aggiungi jwt token
-            db_user.collection.insert_one(payload)
+        if 'username' not in payload:
+            return make_response(jsonify({"error": "Username is required"}), 400)
         
-        return make_response(jsonify({"message": "User registered successfully"}), 200)
+        if userExists(payload.get("username")):
+            return make_response(jsonify({"error": "User already exists"}), 400)
 
+        user = {
+            "username": payload.get("username"),
+            "balance": 0,
+            "collection": [],
+            "transactions": []
+        }
+        db_user.collection.insert_one(user)
+        return make_response(jsonify({"message": "User initialized successfully"}), 201)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 502)
 
@@ -50,8 +53,33 @@ def get_user_from_name():
         res = []
         all = list(db_user.collection.find({'username': username}))
         for element in all:
-            res.append({'username': element["username"], 'password': element["password"]})
+            res.append({
+                'username': element["username"],
+                'balance': element["balance"],
+                'collection': element["collection"],
+                'transactions': element["transactions"]
+            })
         return make_response(jsonify(res), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+
+# endpoint to increase the balance of a user
+@app.route('/increase_balance', methods=['POST'])
+@role_required('admin')
+def increase_balance():
+    token_payload, error = decode_token()
+    if error:
+        return make_response(jsonify({"error": error}), 401)
+    
+    data = request.json
+    username = data.get("username")
+    amount = data.get("amount")
+    try:
+        user = db_user.collection.find_one({"username": username})
+        if user is None:
+            return make_response(jsonify({"error": "User not found"}), 404)
+        db_user.collection.update_one({"username": username}, {"$inc": {"balance": amount}})
+        return make_response(jsonify({"message": "Balance updated successfully"}), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
     
@@ -73,7 +101,11 @@ def get_all_logs():
         res = []
         all = list(db_user.collection.find({}))
         for element in all:
-            res.append({'username': element["username"], 'password': element["password"]})
+            res.append({
+                'username': element["username"],
+                'balance': element["balance"],
+                'collection': element["collection"],
+                'transactions': element["transactions"]})
         return make_response(jsonify(res), 200)
     except Exception as e:
         print("DEBUG: Error fetching logs:", str(e))

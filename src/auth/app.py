@@ -1,15 +1,15 @@
 import os
+import re
 from flask import Flask, request, make_response, jsonify
-import requests
 from pymongo import MongoClient
-import datetime
+from datetime import datetime, timedelta
 from pymongo.errors import ServerSelectionTimeoutError
 import uuid
 import bson.json_util as mongo_json
-
-import secrets
 import jwt
 from auth_utils import role_required, get_username_from_jwt
+import bcrypt
+import os
 
 # for better error messages
 from rich.traceback import install
@@ -56,11 +56,63 @@ except ServerSelectionTimeoutError:
     print("Could not connect to MongoDB server.")
 
 
+# # Insert the test user into the database
+# try:
+#     auth_db.users.insert_one(test_user)
+# except ServerSelectionTimeoutError:
+#     print("Could not connect to MongoDB server.")
 
 
 # region ROUTES DEFINITIONS -------------------------------
 
-#TODO: register route
+@app.route('/register', methods=['POST'])
+def register_user():
+    try:
+        payload = request.json  # Get JSON data from the request body
+        if payload is None:
+            return make_response(jsonify({"error": "No data provided"}), 400)
+        
+        if 'username' not in payload or 'password' not in payload or 'email' not in payload or 'role' not in payload:
+            return make_response(jsonify({"error": "Missing fields"}), 400)
+        
+        if payload['role'] not in ['normalUser', 'adminUser']:
+            return make_response(jsonify({"error": "Invalid role"}), 400)
+        
+        if auth_db.users.find_one({"username": payload['username']}):
+            return make_response(jsonify({"error": "User already exists"}), 400)
+        
+        if not re.match(r"^[a-zA-Z0-9._-]{3,20}$", payload['username']):
+            return make_response(jsonify({"error": "Username must be alfanumeric and between 3 and 20 digits"}), 400)
+        
+        # commented to allow easier testing
+        # Requires at least one uppercase letter.
+        # Requires at least one lowercase letter.
+        # Requires at least one digit.
+        # Requires at least one special character (@, $, !, %, *, ?, &).
+        # Requires at least 8 characters long and includes valid characters only.
+        
+        # if not re.match(r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", #payload['password']):
+        #    return make_response(jsonify({"error": "Invalid password"}), 400)
+         
+        if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", payload['email']):
+            return make_response(jsonify({"error": "Invalid email"}), 400)
+        
+        user = {
+            "username": payload['username'],
+            # non so se va fatto hash(hash(psw)+salt) qui o se l'user deve mandare già la password hashata
+            "password": bcrypt.hashpw(payload['password'].encode(), bcrypt.gensalt()),
+            "email": payload['email'],
+            "role": payload['role']
+        }
+        
+        auth_db.users.insert_one(user)
+        # need to insert user also in db-user, with initializated fields
+        # non so se ha piu senso fare un endpoint in user che crea un utente con i campi inizializzati o se fare l'accesso al db-user direttamente qui e crearlo
+        
+        return make_response(jsonify({"message": "User registered successfully"}), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 502)
+
 
 
 # Ritorna tutti gli utenti contenenti nel database
@@ -75,53 +127,56 @@ def get_all_users():
 
 
 
-@app.route('/oauth/token', methods=['POST'])
+@app.route('/login', methods=['POST'])
 def token_endpoint():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
 
-    if not username or not password:
-        return jsonify({"error": "Username and password are required"}), 400
-    
-    # Validate credentials (lookup from the database)
-    user = auth_db.users.find_one({"username": username})
-    if not user or user["password"] != password:
-        return jsonify({"error": "Invalid credentials"}), 400
+        if not username or not password:
+            return jsonify({"error": "Username and password are required"}), 400
+        
+        # Validate credentials (lookup from the database)
+        user = auth_db.users.find_one({"username": username})
+        if not user or not bcrypt.checkpw(password.encode(), user["password"]):
+            return jsonify({"error": "Invalid credentials"}), 400
 
-    # Generate tokens
-    access_token = jwt.encode(
-        {
-            "sub": username, # JWT Subject: the user's ID
-            "role": user["role"],
-            
-            "iat": datetime.datetime.utcnow(), # JWT Issued At
-            "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=TOKEN_EXPIRATION_MINUTES),
-            
-            "iss": "https://auth.example.com", # JWT Issuer
-            "jti": str(uuid.uuid4()) # JWT ID: univocal identifier for the token
-        },
-        JWT_SECRET,
-        algorithm="HS256"
-    )
-    
-    # TODO: lo ho commentato perché basta access_token. Va bene? Oppure serve per via dello standard?
-    # id_token = jwt.encode(
-    #     {
-    #         "sub": username,
-    #         "email": user["email"],
-    #         "role": user["role"],
-    #         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=TOKEN_EXPIRATION_MINUTES)
-    #     },
-    #     JWT_SECRET,
-    #     algorithm="HS256"
-    # )
+        # Generate tokens
+        access_token = jwt.encode(
+            {
+                "sub": username, # JWT Subject: the user's ID
+                "role": user["role"],
+                
+                "iat": datetime.now(), # JWT Issued At
+                "exp": datetime.now() + timedelta(minutes=TOKEN_EXPIRATION_MINUTES),
+                
+                "iss": "https://auth.example.com", # JWT Issuer
+                "jti": str(uuid.uuid4()) # JWT ID: univocal identifier for the token
+            },
+            JWT_SECRET,
+            algorithm="HS256"
+        )
+        
+        # TODO: lo ho commentato perché basta access_token. Va bene? Oppure serve per via dello standard?
+        # id_token = jwt.encode(
+        #     {
+        #         "sub": username,
+        #         "email": user["email"],
+        #         "role": user["role"],
+        #         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=TOKEN_EXPIRATION_MINUTES)
+        #     },
+        #     JWT_SECRET,
+        #     algorithm="HS256"
+        # )
 
-    return jsonify({
-        "access_token": access_token,
-        "token_type": "Bearer"
-    })
-
+        return jsonify({
+            "access_token": access_token,
+            "token_type": "Bearer"
+        })
+        
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 502)
 
 
 

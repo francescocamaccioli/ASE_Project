@@ -1,0 +1,1048 @@
+{
+	"info": {
+		"_postman_id": "80745346-aaa6-4cff-b0dd-137edb46a5f3",
+		"name": "integration-tests",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26720283",
+		"_collection_link": "https://blue-station-831864.postman.co/workspace/9f0fd141-4312-4348-9e57-9e529572e41c/collection/26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3?action=share&source=collection_link&creator=26720283"
+	},
+	"item": [
+		{
+			"name": "admin-gateway",
+			"item": [
+				{
+					"name": "/",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"// Test the response body structure",
+									"pm.test(\"JSON response says that the gateway is running\", function () {",
+									"    // Parse the response JSON",
+									"    var jsonData = pm.response.json();",
+									"    ",
+									"    // Check that the response matches the expected object",
+									"    pm.expect(jsonData).to.eql({\"message\": \"API Gateway is running\"});",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ADMIN_GATEWAY_URL}}/",
+							"host": [
+								"{{ADMIN_GATEWAY_URL}}"
+							],
+							"path": [
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/market/checkconnection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{ADMIN_GATEWAY_URL}}/market/checkconnection",
+							"host": [
+								"{{ADMIN_GATEWAY_URL}}"
+							],
+							"path": [
+								"market",
+								"checkconnection"
+							]
+						},
+						"description": "We should be able to access all the public enpoints from the admin gateway."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "gatcha microservice",
+			"item": [
+				{
+					"name": "add gatcha comune",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"// Store the _id from the response inside an environment variable \"gatcha_id\"",
+									"pm.environment.set(\"gatcha_id\", pm.response.json().data._id);",
+									"",
+									"",
+									"// Now we have to check if we can correctly download the image we just uploaded ",
+									"// (it has been uploaded to a MinIO bucket)",
+									"",
+									"// Extracting the image URL from the response",
+									"const imageURL = pm.response.json().data.image;",
+									"pm.test('Check if response image URL is valid', function () {",
+									"    pm.expect(pm.response.json().data.image).to.be.a('string').and.to.not.be.empty;",
+									"});",
+									"",
+									"const completeImageURL = pm.environment.get(\"GATEWAY_URL\") + imageURL;",
+									"",
+									"console.log(\"You can check the content of the image at: \" + completeImageURL);",
+									"",
+									"// Sending a request to the image URL to check if it is appropriate",
+									"pm.sendRequest({",
+									"    url: completeImageURL,",
+									"    method: 'GET',",
+									"}, function (err, res) {",
+									"    pm.test('Image request is successful', function () {",
+									"        pm.expect(res).to.have.status(200);",
+									"    });",
+									"    pm.test('Image content type is valid', function () {",
+									"        pm.expect(res.headers.get('Content-Type')).to.include('image');",
+									"    });",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "test/testimage.png"
+								},
+								{
+									"key": "json",
+									"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"comune\"\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{ADMIN_GATEWAY_URL}}/gatcha/gatchas",
+							"host": [
+								"{{ADMIN_GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"gatchas"
+							]
+						},
+						"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+					},
+					"response": []
+				},
+				{
+					"name": "add gatcha raro",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"// Store the _id from the response inside an environment variable \"gatcha_id\"",
+									"pm.environment.set(\"gatcha_id\", pm.response.json().data._id);",
+									"",
+									"",
+									"// Now we have to check if we can correctly download the image we just uploaded ",
+									"// (it has been uploaded to a MinIO bucket)",
+									"",
+									"// Extracting the image URL from the response",
+									"const imageURL = pm.response.json().data.image;",
+									"pm.test('Check if response image URL is valid', function () {",
+									"    pm.expect(pm.response.json().data.image).to.be.a('string').and.to.not.be.empty;",
+									"});",
+									"",
+									"const completeImageURL = pm.environment.get(\"GATEWAY_URL\") + imageURL;",
+									"",
+									"console.log(\"You can check the content of the image at: \" + completeImageURL);",
+									"",
+									"// Sending a request to the image URL to check if it is appropriate",
+									"pm.sendRequest({",
+									"    url: completeImageURL,",
+									"    method: 'GET',",
+									"}, function (err, res) {",
+									"    pm.test('Image request is successful', function () {",
+									"        pm.expect(res).to.have.status(200);",
+									"    });",
+									"    pm.test('Image content type is valid', function () {",
+									"        pm.expect(res.headers.get('Content-Type')).to.include('image');",
+									"    });",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "test/testimage.png"
+								},
+								{
+									"key": "json",
+									"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"comune\"\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{ADMIN_GATEWAY_URL}}/gatcha/gatchas",
+							"host": [
+								"{{ADMIN_GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"gatchas"
+							]
+						},
+						"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+					},
+					"response": []
+				},
+				{
+					"name": "add gatcha epico",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"// Store the _id from the response inside an environment variable \"gatcha_id\"",
+									"pm.environment.set(\"gatcha_id\", pm.response.json().data._id);",
+									"",
+									"",
+									"// Now we have to check if we can correctly download the image we just uploaded ",
+									"// (it has been uploaded to a MinIO bucket)",
+									"",
+									"// Extracting the image URL from the response",
+									"const imageURL = pm.response.json().data.image;",
+									"pm.test('Check if response image URL is valid', function () {",
+									"    pm.expect(pm.response.json().data.image).to.be.a('string').and.to.not.be.empty;",
+									"});",
+									"",
+									"const completeImageURL = pm.environment.get(\"GATEWAY_URL\") + imageURL;",
+									"",
+									"console.log(\"You can check the content of the image at: \" + completeImageURL);",
+									"",
+									"// Sending a request to the image URL to check if it is appropriate",
+									"pm.sendRequest({",
+									"    url: completeImageURL,",
+									"    method: 'GET',",
+									"}, function (err, res) {",
+									"    pm.test('Image request is successful', function () {",
+									"        pm.expect(res).to.have.status(200);",
+									"    });",
+									"    pm.test('Image content type is valid', function () {",
+									"        pm.expect(res.headers.get('Content-Type')).to.include('image');",
+									"    });",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "test/testimage.png"
+								},
+								{
+									"key": "json",
+									"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"epico\"\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{ADMIN_GATEWAY_URL}}/gatcha/gatchas",
+							"host": [
+								"{{ADMIN_GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"gatchas"
+							]
+						},
+						"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+					},
+					"response": []
+				},
+				{
+					"name": "add gatcha leggendario",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"// Store the _id from the response inside an environment variable \"gatcha_id\"",
+									"pm.environment.set(\"gatcha_id\", pm.response.json().data._id);",
+									"",
+									"",
+									"// Now we have to check if we can correctly download the image we just uploaded ",
+									"// (it has been uploaded to a MinIO bucket)",
+									"",
+									"// Extracting the image URL from the response",
+									"const imageURL = pm.response.json().data.image;",
+									"pm.test('Check if response image URL is valid', function () {",
+									"    pm.expect(pm.response.json().data.image).to.be.a('string').and.to.not.be.empty;",
+									"});",
+									"",
+									"const completeImageURL = pm.environment.get(\"GATEWAY_URL\") + imageURL;",
+									"",
+									"console.log(\"You can check the content of the image at: \" + completeImageURL);",
+									"",
+									"// Sending a request to the image URL to check if it is appropriate",
+									"pm.sendRequest({",
+									"    url: completeImageURL,",
+									"    method: 'GET',",
+									"}, function (err, res) {",
+									"    pm.test('Image request is successful', function () {",
+									"        pm.expect(res).to.have.status(200);",
+									"    });",
+									"    pm.test('Image content type is valid', function () {",
+									"        pm.expect(res.headers.get('Content-Type')).to.include('image');",
+									"    });",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "test/testimage.png"
+								},
+								{
+									"key": "json",
+									"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"leggendario\"\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{ADMIN_GATEWAY_URL}}/gatcha/gatchas",
+							"host": [
+								"{{ADMIN_GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"gatchas"
+							]
+						},
+						"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+					},
+					"response": []
+				},
+				{
+					"name": "get single gatcha",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test(\"Response body structure is valid\", function () {",
+									"    var responseJSON = pm.response.json();",
+									"    pm.expect(responseJSON).to.be.an('object').that.includes.keys('_id', 'image', 'name', 'rarity');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/gatcha/gatchas/{{gatcha_id}}",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"gatchas",
+								"{{gatcha_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "edit a single gatcha",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test(\"Response body structure is valid\", function () {",
+									"    var responseJSON = pm.response.json();",
+									"    pm.expect(responseJSON.data).to.be.an('object').that.includes.keys('_id', 'image', 'name', 'rarity');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"rarity\": \"9999\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/gatcha/gatchas/{{gatcha_id}}",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"gatchas",
+								"{{gatcha_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get all gatchas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test(\"Response body structure is valid\", function () {",
+									"    var responseJSON = pm.response.json();",
+									"    pm.expect(responseJSON[1]).to.be.an('object').that.includes.keys('_id', 'image', 'name', 'rarity');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/gatcha/gatchas",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"gatchas"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "roll a gatcha",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test(\"Response body structure is valid\", function () {",
+									"    var responseJSON = pm.response.json();",
+									"    pm.expect(responseJSON).to.be.an('object').that.includes.keys('_id', 'image', 'name', 'rarity', 'NTot');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/gatcha/roll",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"roll"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete a gatcha",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{ADMIN_GATEWAY_URL}}/gatcha/gatchas/{{gatcha_id}}",
+							"host": [
+								"{{ADMIN_GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"gatchas",
+								"{{gatcha_id}}"
+							]
+						},
+						"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "user microservice",
+			"item": [
+				{
+					"name": "/user/checkconnection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/checkconnection",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"checkconnection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/user/getAll",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/getAll",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"getAll"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/user/get_user_from_name",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/get_user_from_name",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"get_user_from_name"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "market microservice",
+			"item": [
+				{
+					"name": "/market/checkconnection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/market/checkconnection",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"market",
+								"checkconnection"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "auth",
+			"item": [
+				{
+					"name": "/register",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Verify response status code is 200 or 400 and contains error message\", function () {",
+									"    pm.expect(pm.response.code).to.satisfy((code) => {",
+									"        return code === 200 || (code === 400 && pm.response.json().error === \"User already exists\");",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"testpassword\",\n    \"email\": \"test@test.org\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/register",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/auth/login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// va bene anche ",
+									"pm.test(\"Response status code is 200 or 400\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"pm.test(\"Save access token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",      \n    \"password\": \"testpassword\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/login",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "userinfo for an id token",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/userinfo",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"userinfo"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get all users from db",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImVtYWlsIjoidGVzdHVzZXJAZXhhbXBsZS5jb20iLCJyb2xlIjoibm9ybWFsVXNlciIsImV4cCI6MTczMjY1NjQ5M30.gAS9BPaFZU95iaIVdg1BCaFG494qM147uGPgPm9kge0",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/debug/users",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"debug",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "echousername",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/test/echousername",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"test",
+								"echousername"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "gateway root",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"// Test the response body structure",
+							"pm.test(\"JSON response says that the gateway is running\", function () {",
+							"    // Parse the response JSON",
+							"    var jsonData = pm.response.json();",
+							"    ",
+							"    // Check that the response matches the expected object",
+							"    pm.expect(jsonData).to.eql({\"message\": \"API Gateway is running\"});",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{GATEWAY_URL}}/",
+					"host": [
+						"{{GATEWAY_URL}}"
+					],
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "token",
+			"value": ""
+		}
+	]
+}

@@ -15,20 +15,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check. All auth_utils.py files must be identical
+        run: |
+          find . -name "auth_utils.py" -exec md5sum {} + | awk '{print $1}' | uniq | wc -l | awk '$1 != 1 { exit 1 }'
+
       - name: Build and run the whole system using Docker Compose
         run: docker compose -f src/docker-compose.yml up -d
 
-      - name: Install Node.js
-        uses: actions/setup-node@v4
+      # - name: Install Node.js for Newman
+      #   uses: actions/setup-node@v4
 
-      - name: Install Newman
-        run: npm install -g newman
+      # # TODO: dovremo usare .json come chiesto da professore invece che API. Quando faremo cioò, usare lo step sotto invece che quello che scarica direttamente da Postman 
+      # # e in più dovremo sostituire il nome del file dentro al json con: "src": "test/testimage.png"
+      # - name: Run the Newman tests
+      #   run: |
+      #     npm install -g newman
+      #     newman run docs/integration-tests.postman_collection.json -e docs/localhost.postman_environment.json
 
-      - name: Run the tests
-        # TODO: prendere le env var direttamente da postman?
-        # TODO: usare .json come chiesto da professore invece che API?
-        run: newman run "https://api.postman.com/collections/26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3?access_key=${{ secrets.POSTMAN_ACCESS_KEY }}" --env-var "GATEWAY_URL=http://localhost:5001" --env-var "ADMIN_GATEWAY_URL=http://localhost:5002"
-      
+
+      - name: Run the Postman tests
+        # questo comando scarica la collection e l'environment direttamente da Postman, senza che noi dobbiamo scaricarli
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+          postman login --with-api-key ${{ secrets.POSTMAN_AK2 }}
+          postman collection run 26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3 -e 26720283-035d030c-9e92-4a67-a691-b1048e5a6dcb
+
+
+
       - name: Output Docker Compose logs
         if: always()
         run: docker compose -f src/docker-compose.yml logs

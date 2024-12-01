@@ -56,11 +56,8 @@ def register_user():
         if payload is None:
             return make_response(jsonify({"error": "No data provided"}), 400)
         
-        if 'username' not in payload or 'password' not in payload or 'email' not in payload or 'role' not in payload:
+        if 'username' not in payload or 'password' not in payload or 'email' not in payload:
             return make_response(jsonify({"error": "Missing fields"}), 400)
-        
-        if payload['role'] not in ['normalUser', 'adminUser']:
-            return make_response(jsonify({"error": "Invalid role"}), 400)
         
         if auth_db.users.find_one({"username": payload['username']}):
             return make_response(jsonify({"error": "User already exists"}), 400)
@@ -86,7 +83,7 @@ def register_user():
             # non so se va fatto hash(hash(psw)+salt) qui o se l'user deve mandare già la password hashata
             "password": bcrypt.hashpw(payload['password'].encode(), bcrypt.gensalt()),
             "email": payload['email'],
-            "role": payload['role']
+            "role": "normalUser"
         }
         
         auth_db.users.insert_one(user)

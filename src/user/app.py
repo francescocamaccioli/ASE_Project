@@ -2,7 +2,7 @@ import os
 from flask import Flask, request, make_response, jsonify
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
-from auth_utils import decode_token, role_required, get_username_from_jwt
+from auth_utils import decode_token, role_required, get_userID_from_jwt
 
 app = Flask(__name__)
 
@@ -16,8 +16,8 @@ MARKET_URL = os.getenv('MARKET_URL')
 client_user = MongoClient("db-user", 27017, maxPoolSize=50)
 db_user= client_user["db_users"]
 
-def userExists(username):
-    return db_user.collection.find_one({"username": username}) is not None
+def userExists(userID):
+    return db_user.collection.find_one({"userID": userID}) is not None
 
 # Endpoint per registrare un utente passando i dati nel body della richiesta
 @app.route('/init-user', methods=['POST'])
@@ -27,14 +27,14 @@ def init_user():
         if payload is None:
             return make_response(jsonify({"error": "No data provided"}), 400)
         
-        if 'username' not in payload:
-            return make_response(jsonify({"error": "Username is required"}), 400)
+        if "userID" not in payload:
+            return make_response(jsonify({"error": "No userID provided"}), 400)
         
-        if userExists(payload.get("username")):
+        if userExists(payload.get("userID")):
             return make_response(jsonify({"error": "User already exists"}), 400)
 
         user = {
-            "username": payload.get("username"),
+            "userID": payload.get("userID"),
             "balance": 0,
             "collection": [],
             "transactions": []
@@ -43,18 +43,30 @@ def init_user():
         return make_response(jsonify({"message": "User initialized successfully"}), 201)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 502)
+    
+@app.route('/delete_user', methods=['POST'])
+def delete_user():
+    #receive user ID from POST request and delete the user from the database
+    data = request.get_json()
+    userID = data['userID']
+    try:
+        db_user.collection.delete_one({"userID": userID})
+        return make_response(jsonify({"message": "User deleted successfully"}), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+    
 
 # Endpoint per ottenere un utente passando il nome utente nel body della richiesta
 @app.route('/get_user_from_name', methods=['GET'])
 def get_user_from_name():
     data = request.get_json()  # Ottieni i dati JSON dalla richiesta
-    username = data['username']
+    userID = data['userID']
     try:
         res = []
-        all = list(db_user.collection.find({'username': username}))
+        all = list(db_user.collection.find({'userID': userID}))
         for element in all:
             res.append({
-                'username': element["username"],
+                'userID': element["userID"],
                 'balance': element["balance"],
                 'collection': element["collection"],
                 'transactions': element["transactions"]
@@ -67,16 +79,16 @@ def get_user_from_name():
 @app.route('/increase_balance', methods=['POST'])
 def increase_balance():
     try: 
-        username = get_username_from_jwt()
+        userID = get_userID_from_jwt()
     except Exception as e:
         return make_response(jsonify({"error": "Error decoding token"}), 401)
     data = request.json
     amount = data.get("amount")
     try:
-        user = db_user.collection.find_one({"username": username})
+        user = db_user.collection.find_one({"userID": userID})
         if user is None:
             return make_response(jsonify({"error": "User not found"}), 404)
-        db_user.collection.update_one({"username": username}, {"$inc": {"balance": amount}})
+        db_user.collection.update_one({"userID": userID}, {"$inc": {"balance": amount}})
         return make_response(jsonify({"message": "Balance updated successfully"}), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
@@ -86,18 +98,18 @@ def increase_balance():
 @app.route('/decrease_balance', methods=['POST'])
 def decrease_balance():  
     try: 
-        username = get_username_from_jwt()
+        userID = get_userID_from_jwt()
     except Exception as e:
         return make_response(jsonify({"error": "Error decoding token"}), 401)
     data = request.json
     amount = data.get("amount")
     try:
-        user = db_user.collection.find_one({"username": username})
+        user = db_user.collection.find_one({"userID": userID})
         if user is None:
             return make_response(jsonify({"error": "User not found"}), 404)
         if user["balance"] < amount:
             return make_response(jsonify({"error": "Insufficient funds"}), 400)
-        db_user.collection.update_one({"username": username}, {"$inc": {"balance": -amount}})
+        db_user.collection.update_one({"userID": userID}, {"$inc": {"balance": -amount}})
         return make_response(jsonify({"message": "Balance updated successfully"}), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
@@ -121,7 +133,7 @@ def get_all_logs():
         all = list(db_user.collection.find({}))
         for element in all:
             res.append({
-                'username': element["username"],
+                'userID': element["userID"],
                 'balance': element["balance"],
                 'collection': element["collection"],
                 'transactions': element["transactions"]})

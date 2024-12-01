@@ -7,9 +7,10 @@ from pymongo.errors import ServerSelectionTimeoutError
 import uuid
 import bson.json_util as mongo_json
 import jwt
-from auth_utils import role_required, get_username_from_jwt
+from auth_utils import role_required, get_userID_from_jwt
 import bcrypt
 import os
+import requests
 
 # for better error messages
 from rich.traceback import install
@@ -22,6 +23,8 @@ TOKEN_EXPIRATION_MINUTES = 30
 AUTH_DB_URL = os.getenv("AUTH_DB_URL")
 AUTH_DB_NAME = os.getenv("AUTH_DB_NAME")
 JWT_SECRET = os.getenv("JWT_SECRET")
+GATEWAY_URL = os.getenv("GATEWAY_URL")
+ADMIN_GATEWAY_URL = os.getenv("ADMIN_GATEWAY_URL")
 
 
 
@@ -59,8 +62,7 @@ def register_user():
         if 'username' not in payload or 'password' not in payload or 'email' not in payload or 'role' not in payload:
             return make_response(jsonify({"error": "Missing fields"}), 400)
         
-        if payload['role'] not in ['normalUser', 'adminUser']:
-            return make_response(jsonify({"error": "Invalid role"}), 400)
+       
         
         if auth_db.users.find_one({"username": payload['username']}):
             return make_response(jsonify({"error": "User already exists"}), 400)
@@ -68,6 +70,17 @@ def register_user():
         if not re.match(r"^[a-zA-Z0-9._-]{3,20}$", payload['username']):
             return make_response(jsonify({"error": "Username must be alfanumeric and between 3 and 20 digits"}), 400)
         
+        user = {
+            "userID": str(uuid.uuid4()),
+            "username": payload['username'],
+            # non so se va fatto hash(hash(psw)+salt) qui o se l'user deve mandare già la password hashata
+            "password": bcrypt.hashpw(payload['password'].encode(), bcrypt.gensalt()),
+            "email": payload['email'],
+            "role": 'normalUser'
+        }
+        
+        auth_db.users.insert_one(user)
+
         # commented to allow easier testing
         # Requires at least one uppercase letter.
         # Requires at least one lowercase letter.
@@ -81,17 +94,12 @@ def register_user():
         if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", payload['email']):
             return make_response(jsonify({"error": "Invalid email"}), 400)
         
-        user = {
-            "username": payload['username'],
-            # non so se va fatto hash(hash(psw)+salt) qui o se l'user deve mandare già la password hashata
-            "password": bcrypt.hashpw(payload['password'].encode(), bcrypt.gensalt()),
-            "email": payload['email'],
-            "role": payload['role']
-        }
-        
-        auth_db.users.insert_one(user)
-        # need to insert user also in db-user, with initializated fields
         # non so se ha piu senso fare un endpoint in user che crea un utente con i campi inizializzati o se fare l'accesso al db-user direttamente qui e crearlo
+        response = requests.post(ADMIN_GATEWAY_URL+"/user/init-user", json={"userID": user["userID"]})
+        if response.status_code != 201:
+            return make_response(jsonify({"error": "Could not initialize user, problem with the user microservice"}), 502)
+                    
+
         
         return make_response(jsonify({"message": "User registered successfully"}), 200)
     except Exception as e:
@@ -129,7 +137,7 @@ def token_endpoint():
         # Generate tokens
         access_token = jwt.encode(
             {
-                "sub": username, # JWT Subject: the user's ID
+                "sub": user["userID"], # JWT Subject: the user's ID
                 "role": user["role"],
                 
                 "iat": datetime.now(), # JWT Issued At
@@ -162,6 +170,55 @@ def token_endpoint():
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 502)
 
+@app.route('/editinfo', methods=['POST'])
+def edit_user_info():
+    try:    
+        try:
+            userID = get_userID_from_jwt()
+        except Exception as e:
+            return jsonify({"error": str(e)}), 401
+        
+        data = request.get_json()
+        new_username = data.get('username')
+        password = data.get('password')
+        email = data.get('email')
+        role = data.get('role')
+        
+        user = auth_db.users.find_one({"userID": userID})
+        if not user:
+            return jsonify({"error": "User not found " + userID}), 404
+        if new_username:
+            user['username'] = new_username
+        if password:
+            user['password'] = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+        if email:
+            user['email'] = email
+        if role:
+            user['role'] = role
+        
+        auth_db.users.update_one({"userID": userID}, {"$set": user})
+
+        return jsonify({"message": "User info updated successfully"})
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 502)
+
+@app.route('/delete_user', methods=['POST'])
+def delete_user():
+    try:
+        try:
+            userID = get_userID_from_jwt()
+        except Exception as e:
+            return jsonify({"error": str(e)}), 401
+        
+        auth_db.users.delete_one({"userID": userID})
+        # invoke the user microservice to delete the user
+        response = requests.post(ADMIN_GATEWAY_URL+"/user/delete_user", json={"userID": userID})
+        if response.status_code != 200:
+            return make_response(jsonify({"error": "Could not delete user, problem with the user microservice "+ response.text}), 502)
+        
+        return jsonify({"message": "User deleted successfully"})
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 502)
 
 
 

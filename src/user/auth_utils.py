@@ -66,7 +66,6 @@ def role_required(*required_roles):
 
 
 
-
 def get_username_from_jwt():
     """
     Returns the username from the JWT payload (reading the "sub" field).

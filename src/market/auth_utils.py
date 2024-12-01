@@ -8,7 +8,7 @@ from os import getenv
 # to be used inside each microservice.
 
 # ATTENZIONE: OGNI VOLTA CHE SI MODIFICA, LA NUOVA VERSIONE VA COPIATA IN TUTTI I MICROSERVIZI
-# TODO: trovare un modo migliore
+# per farlo, usare il file /shared/sync.py
 
 
 JWT_SECRET = getenv("JWT_SECRET")
@@ -63,7 +63,6 @@ def role_required(*required_roles):
             return func(*args, **kwargs)
         return wrapper
     return decorator
-
 
 
 

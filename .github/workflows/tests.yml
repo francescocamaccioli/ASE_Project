@@ -15,6 +15,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check. All auth_utils.py files must be identical
+        run: |
+          find . -name "auth_utils.py" -exec md5sum {} + | awk '{print $1}' | uniq -c | awk '$1 != 1 {exit 1}'
+
       - name: Build and run the whole system using Docker Compose
         run: docker compose -f src/docker-compose.yml up -d
 

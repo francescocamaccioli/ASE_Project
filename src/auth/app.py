@@ -59,10 +59,8 @@ def register_user():
         if payload is None:
             return make_response(jsonify({"error": "No data provided"}), 400)
         
-        if 'username' not in payload or 'password' not in payload or 'email' not in payload or 'role' not in payload:
+        if 'username' not in payload or 'password' not in payload or 'email' not in payload:
             return make_response(jsonify({"error": "Missing fields"}), 400)
-        
-       
         
         if auth_db.users.find_one({"username": payload['username']}):
             return make_response(jsonify({"error": "User already exists"}), 400)
@@ -94,6 +92,16 @@ def register_user():
         if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", payload['email']):
             return make_response(jsonify({"error": "Invalid email"}), 400)
         
+        user = {
+            "username": payload['username'],
+            # non so se va fatto hash(hash(psw)+salt) qui o se l'user deve mandare già la password hashata
+            "password": bcrypt.hashpw(payload['password'].encode(), bcrypt.gensalt()),
+            "email": payload['email'],
+            "role": "normalUser"
+        }
+        
+        auth_db.users.insert_one(user)
+        # need to insert user also in db-user, with initializated fields
         # non so se ha piu senso fare un endpoint in user che crea un utente con i campi inizializzati o se fare l'accesso al db-user direttamente qui e crearlo
         response = requests.post(ADMIN_GATEWAY_URL+"/user/init-user", json={"userID": user["userID"]})
         if response.status_code != 201:
@@ -302,6 +310,12 @@ def normal_user_only():
 @role_required("adminUser")
 def admin_user_only():
     return jsonify({"message": "You successfully accessed an admin user-only endpoint."})
+
+# endpoint for both normal and admin users
+@app.route('/test/bothroles', methods=['GET'])
+@role_required('normalUser', 'adminUser')
+def both_roles():
+    return jsonify({"message": "You successfully accessed an endpoint that requires admin OR user role."})
 
 
 # When you send a request to this route, you also send you JWT token.

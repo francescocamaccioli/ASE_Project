@@ -2,7 +2,8 @@ import os
 from flask import Flask, request, make_response, jsonify
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
-from auth_utils import decode_token, role_required, get_userID_from_jwt
+from auth_utils import decode_token, role_required, get_userID_from_jwy
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -114,6 +115,26 @@ def decrease_balance():
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
 
+# endpoint per fare i refund di una bid
+@app.route('/refund', methods=['POST'])
+def refund():
+    data = request.json
+    username = data.get("username")
+    amount = data.get("amount")
+    try:
+        user = db_user.collection.find_one({"username": username})
+        if user is None:
+            return make_response(jsonify({"error": "User not found"}), 404)
+        db_user.collection.update_one({"username": username}, {"$inc": {"balance": amount}})
+        transaction = {
+            "amount": amount,
+            "type": "refund",
+            "timestamp": datetime.now()
+        }
+        db_user.collection.update_one({"username": username}, {"$push": {"transactions": transaction}})
+        return make_response(jsonify({"message": "Refund successful"}), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
 
 # Endpoint per verificare la connessione al database
 @app.route('/checkconnection', methods=['GET'])

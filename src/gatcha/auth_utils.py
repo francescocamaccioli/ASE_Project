@@ -66,17 +66,17 @@ def role_required(*required_roles):
 
 
 
-def get_userID_from_jwt():
+def get_username_from_jwt():
     """
-    Returns the userID from the JWT payload (reading the "sub" field).
-    This userID should be guaranteed to be authenticated by the JWT.
+    Returns the username from the JWT payload (reading the "sub" field).
+    This username should be guaranteed to be authenticated by the JWT.
     """
     token_payload, error = decode_token()
     if error:
         raise ValueError(f"Error decoding token: {error}")
     
-    # get the userID from the JWT, and return it
-    userID = token_payload.get("sub", "")
-    if not userID:
-        raise ValueError('userID not found in token')
-    return userID
+    # get the username from the JWT, and return it
+    username = token_payload.get("sub", "")
+    if not username:
+        raise ValueError('Username not found in token')
+    return username

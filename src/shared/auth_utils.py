@@ -8,7 +8,7 @@ from os import getenv
 # to be used inside each microservice.
 
 # ATTENZIONE: OGNI VOLTA CHE SI MODIFICA, LA NUOVA VERSIONE VA COPIATA IN TUTTI I MICROSERVIZI
-# TODO: trovare un modo migliore
+# per farlo, usare il file /shared/sync.py
 
 
 JWT_SECRET = getenv("JWT_SECRET")
@@ -39,9 +39,9 @@ def decode_token():
 
 
 
-def role_required(required_role):
+def role_required(*required_roles):
     """Decorator to enforce role-based authorization:
-    If the JWT you sent doesn't contain the required_role, you won't be authorized to continue.
+    If the JWT you sent doesn't contain one of the required_roles, you won't be authorized to continue.
     """
     def decorator(func):
         @wraps(func)
@@ -52,8 +52,12 @@ def role_required(required_role):
 
             # Check the role in the JWT payload
             user_role = token_payload.get("role", "")
-            if user_role != required_role:
-                return jsonify({'error': f'Unauthorized: requires role {required_role}'}), 403
+            if user_role not in required_roles:
+                if len(required_roles) == 1:
+                    return jsonify({'error': f'Unauthorized: requires the role {required_roles[0]}'}), 403
+                else:
+                    roles_str = " or ".join(required_roles)
+                    return jsonify({'error': f'Unauthorized: requires one of the roles {roles_str}'}), 403
 
             # Call the original function
             return func(*args, **kwargs)

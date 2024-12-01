@@ -1,10 +1,11 @@
 import datetime
 import os
 import random
-from flask import Flask, request, make_response
+from flask import Flask, request, make_response, jsonify
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 import bson.json_util as json_util
+import bson
 import uuid
 
 
@@ -29,6 +30,7 @@ RARITY_PROBABILITIES = {
     'leggendario': 0.05  # 5%
 }
 
+GATCHA_DATABASE_URL = os.getenv('GATCHA_DATABASE_URL')
 
 # URLS dei microservizi
 USER_URL = os.getenv('USER_URL')
@@ -52,7 +54,8 @@ validate_env_vars(
     MINIO_STORAGE_URL=MINIO_STORAGE_URL,
     MINIO_STORAGE_ACCESS_KEY=MINIO_STORAGE_ACCESS_KEY,
     MINIO_STORAGE_SECRET_KEY=MINIO_STORAGE_SECRET_KEY,
-    MINIO_STORAGE_BUCKET_NAME=MINIO_STORAGE_BUCKET_NAME
+    MINIO_STORAGE_BUCKET_NAME=MINIO_STORAGE_BUCKET_NAME,
+    GATCHA_DATABASE_URL=GATCHA_DATABASE_URL
 )
 # endregion initializing vars ----------------------------------------
 
@@ -109,10 +112,17 @@ except S3Error as e:
 
 
 # Connessione ai database dei microservizi (modificato per usare i container MongoDB tramite nome servizio)
-client_gatcha = MongoClient("db-gatcha", 27017, maxPoolSize=50)
-db_gatcha= client_gatcha["db_gatcha"]
+DATABASE_NAME = 'gatcha_db'
+GATCHA_COLLECTION_NAME = 'gatchas'
+
+mongo_client = MongoClient(GATCHA_DATABASE_URL, 27017, maxPoolSize=50)
+db = mongo_client[DATABASE_NAME]
+
+
+
 
 app = Flask(__name__, instance_relative_config=True)
+
 
 
 
@@ -124,18 +134,6 @@ def weighted_random_choice(rarities):
     probability_list = list(rarities.values())
     return random.choices(rarity_list, probability_list, k=1)[0]
 
-# TODO: non usata?
-# Funzione generica per ottenere dati da un database specifico
-def get_data_from_db(client, db_name, collection_name, query={}):
-    db = client[db_name]
-    collection = db[collection_name]
-    return list(collection.find(query))
-
-# Funzione generica per inserire dati in un database
-def insert_data_to_db(client, db_name, collection_name, data):
-    db = client[db_name]
-    collection = db[collection_name]
-    collection.insert_one(data)
 
 # endregion utility functions ----------------------------------------
 
@@ -154,6 +152,9 @@ def add_gatcha_data():
     Request format. The request should be a multipart request that includes two parts:
     - 'file': The image file to upload.
     - 'json': The JSON payload containing other data.
+    
+    This endpoint satisfies this user story:
+    AS AN administrator I WANT TO modify the gacha collection SO THAT I I can add/remove gachas
     """
     
     if 'file' not in request.files or 'json' not in request.form:
@@ -163,10 +164,11 @@ def add_gatcha_data():
 
     if file.filename == '':
         return make_response(json_util.dumps({"error": "No image file uploaded"}), 400)
+    
+    gatcha_uuid = uuid.uuid4().hex
 
     filename = secure_filename(file.filename)
-    unique_id = uuid.uuid4().hex
-    filename = f"{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}_{unique_id}_{filename}" # create a unique filename
+    filename = f"{gatcha_uuid}_{filename}" # create a unique filename
     destination_file_path = f"images/{filename}"
 
     # Upload the file to MinIO bucket and get the image_url
@@ -201,10 +203,13 @@ def add_gatcha_data():
         return make_response(json_util.dumps({"error": "Invalid JSON format provided"}), 400)
 
     data['image'] = image_url
+    data["_id"] = gatcha_uuid
+    data["NTot"] = 0
 
     # insert the data into the database
     try:
-        insert_data_to_db(client_gatcha, 'db-gatcha', 'db_gatcha', data)
+        db[GATCHA_COLLECTION_NAME].insert_one(data)
+        
         response = make_response(json_util.dumps({"message": "Data with image added to gatcha_db", "data": data}), 200)
         response.headers['Content-Type'] = 'application/json' # TODO: dovremmo fare così per tutti i response in JSON? agli altri manca
         return response
@@ -212,6 +217,44 @@ def add_gatcha_data():
         return make_response(json_util.dumps({"error": f"Database insert failed: {str(e)}"}), 500)
 
 
+
+@app.route('/delete/<gatcha_id>', methods=['DELETE'])
+def delete_gatcha(gatcha_id):
+    """
+    Admins can use this endpoint to delete a gatcha character from the database.
+
+    Request format. The gatcha ID should be provided in the URL path.
+    
+    This endpoint satisfies this user story:
+    AS AN administrator I WANT TO modify the gacha collection SO THAT I can add/remove gachas
+    """
+    try:
+        if not gatcha_id:
+            return make_response(json_util.dumps({"error": "Gatcha ID is required"}), 400)
+
+        # Find the gatcha character in the database
+        gatcha = db[GATCHA_COLLECTION_NAME].find_one({'_id': gatcha_id})
+
+        if not gatcha:
+            return make_response(json_util.dumps({"error": "Gatcha not found"}), 404)
+
+        # Delete the image from the MinIO bucket
+        if 'image' in gatcha:
+            image_path = gatcha['image'].replace(f"/storage/{MINIO_STORAGE_BUCKET_NAME}/", "")
+            try:
+                minio_client.remove_object(MINIO_STORAGE_BUCKET_NAME, image_path)
+            except S3Error as e:
+                return make_response(json_util.dumps({"error": f"Failed to delete image from MinIO: {str(e)}"}), 500)
+
+        # Delete the gatcha character from the database
+        result = db[GATCHA_COLLECTION_NAME].delete_one({'_id': gatcha_id})
+
+        if result.deleted_count == 0:
+            return make_response(json_util.dumps({"error": "Gatcha not found"}), 404)
+
+        return make_response(json_util.dumps({"message": "Gatcha deleted successfully"}), 200)
+    except Exception as e:
+        return make_response(json_util.dumps({"error": f"Failed to delete gatcha: {str(e)}"}), 500)
 
 
 
@@ -224,7 +267,7 @@ def roll_gatcha():
         selected_rarity = weighted_random_choice(RARITY_PROBABILITIES)
         
         # Query al database per ottenere un personaggio della rarità selezionata
-        gachas = list(client_gatcha['gatcha_db']['gatchas'].find({"rarity": selected_rarity}))
+        gachas = list(db[GATCHA_COLLECTION_NAME].find({"rarity": selected_rarity}))
 
         if not gachas:
             return make_response(f"No character found for rarity {selected_rarity}\n", 404)
@@ -236,7 +279,7 @@ def roll_gatcha():
             return make_response(f"No character found for rarity {selected_rarity}\n", 404)
         
         # Increment NTot for the selected character
-        client_gatcha['gatcha_db']['gatchas'].update_one(
+        db[GATCHA_COLLECTION_NAME].update_one(
             {'_id': character['_id']},  # Trova il personaggio tramite il suo ID
             {'$inc': {'NTot': 1}}       # Incrementa il campo NTot di 1
         )
@@ -247,12 +290,23 @@ def roll_gatcha():
     except Exception as e:
         return make_response(str(e), 500)
     
-# Endpoint per ottenere tutti i possibili gatcha
+
+
+
 @app.route('/getAll', methods=['GET'])
 def get_all_gatcha():
+    """
+    Endpoint to get all the existing gatcha characters.
+    
+    This endpoint satisfies the following user stories:
+    - AS A player I WANT TO  see the system gacha collection SO THAT I know what I miss of my collection
+    - AS AN administrator I WANT TO check all the gacha collection SO THAT I can check all the collection
+    """
     try:
-        all_gatcha = list(client_gatcha['gatcha_db']['gatchas'].find({}))
-        return make_response(json_util.dumps(all_gatcha), 200)
+        all_gatcha = list(db[GATCHA_COLLECTION_NAME].find({}))
+        response = make_response(json_util.dumps(all_gatcha), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
     except Exception as e:
         return make_response(str(e), 500)
 

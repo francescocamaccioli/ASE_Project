@@ -67,6 +67,7 @@ services:
       MINIO_STORAGE_ACCESS_KEY: minioadmin
       MINIO_STORAGE_SECRET_KEY: minioadmin
       MINIO_STORAGE_BUCKET_NAME: gachabucket
+      GATCHA_DATABASE_URL: db-gatcha
 
   # User Service
   user:

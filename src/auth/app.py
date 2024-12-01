@@ -246,6 +246,12 @@ def normal_user_only():
 def admin_user_only():
     return jsonify({"message": "You successfully accessed an admin user-only endpoint."})
 
+# endpoint for both normal and admin users
+@app.route('/test/bothroles', methods=['GET'])
+@role_required('normalUser', 'adminUser')
+def both_roles():
+    return jsonify({"message": "You successfully accessed an endpoint that requires admin OR user role."})
+
 
 # When you send a request to this route, you also send you JWT token.
 # It extracs the username from the JWT, and echoes it to you.

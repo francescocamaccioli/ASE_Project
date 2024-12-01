@@ -319,7 +319,8 @@ def get_gatcha(gatcha_id):
     Endpoint to get a specific gatcha character by ID.
     
     This endpoint satisfies the following user stories:
-
+    - AS A player I WANT TO see the info of a system gacha SO THAT I can see the info of a gacha I miss
+    - AS AN administrator I WANT TO check a specific gacha SO THAT I can check the status of a gacha
     """
     try:
         gatcha = db[GATCHA_COLLECTION_NAME].find_one({'_id': gatcha_id})

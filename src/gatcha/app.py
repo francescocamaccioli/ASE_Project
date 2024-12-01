@@ -7,6 +7,7 @@ from pymongo.errors import ServerSelectionTimeoutError
 import bson.json_util as json_util
 import bson
 import uuid
+import auth_utils
 
 
 # for handling image uploads to MinIO
@@ -331,3 +332,46 @@ def get_gatcha(gatcha_id):
     except Exception as e:
         return make_response(str(e), 500)
 
+
+
+@app.route('/gatchas/<gatcha_id>', methods=['PUT'])
+# TODO: @auth_utils.role_required("adminUser")
+def update_gatcha(gatcha_id):
+    """
+    Endpoint to update the information of a specific gatcha character by ID.
+
+    Request format. The request should be a JSON payload containing the fields to update.
+    There is no constraint on the fields that can be updated: an admin can add and or overwrite any field, except for the _id field.
+    
+    This endpoint satisfies the following user stories:
+    AS AN administrator I WANT TO modify the gacha collection SO THAT I can update gacha information
+    """
+    try:
+        if not gatcha_id:
+            return make_response(json_util.dumps({"error": "Gatcha ID is required"}), 400)
+
+        # Parse the JSON payload from the request
+        data = request.get_json()
+        if not data:
+            return make_response(json_util.dumps({"error": "Invalid JSON format provided"}), 400)
+        
+        if '_id' in data:
+            return make_response(json_util.dumps({"error": "You cannot update the _id field"}), 400)
+
+        # Find the gatcha character in the database
+        gatcha = db[GATCHA_COLLECTION_NAME].find_one({'_id': gatcha_id})
+        if not gatcha:
+            return make_response(json_util.dumps({"error": "Gatcha not found"}), 404)
+
+        # Update the gatcha character in the database
+        result = db[GATCHA_COLLECTION_NAME].update_one({'_id': gatcha_id}, {'$set': data})
+
+        if result.matched_count == 0:
+            return make_response(json_util.dumps({"error": "Gatcha not found"}), 404)
+
+        updated_gatcha = db[GATCHA_COLLECTION_NAME].find_one({'_id': gatcha_id})
+        response = make_response(json_util.dumps({"message": "Gatcha updated successfully", "data": updated_gatcha}), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    except Exception as e:
+        return make_response(json_util.dumps({"error": f"Failed to update gatcha: {str(e)}"}), 500)

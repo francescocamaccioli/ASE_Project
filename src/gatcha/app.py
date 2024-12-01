@@ -144,7 +144,7 @@ def weighted_random_choice(rarities):
 # TODO: aggiungere input validation per controllare che la richiesta sia come ce lo aspettiamo
 # TODO: può farla solo admin
 # TODO: c'è un test già scritto, spostarlo in integration tests
-@app.route('/addgatchaData', methods=['POST'])
+@app.route('/add', methods=['PUT'])
 def add_gatcha_data():
     """
     Admins can use this endpoint to add a new gatcha character to the database.
@@ -293,7 +293,7 @@ def roll_gatcha():
 
 
 
-@app.route('/getAll', methods=['GET'])
+@app.route('/gatchas', methods=['GET'])
 def get_all_gatcha():
     """
     Endpoint to get all the existing gatcha characters.
@@ -310,5 +310,24 @@ def get_all_gatcha():
     except Exception as e:
         return make_response(str(e), 500)
 
-def create_app():
-    return app
+
+
+@app.route('/gatchas/<gatcha_id>', methods=['GET'])
+def get_gatcha(gatcha_id):
+    """
+    Endpoint to get a specific gatcha character by ID.
+    
+    This endpoint satisfies the following user stories:
+
+    """
+    try:
+        gatcha = db[GATCHA_COLLECTION_NAME].find_one({'_id': gatcha_id})
+        if not gatcha:
+            return make_response(json_util.dumps({"error": "Gatcha not found"}), 404)
+        
+        response = make_response(json_util.dumps(gatcha), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    except Exception as e:
+        return make_response(str(e), 500)
+

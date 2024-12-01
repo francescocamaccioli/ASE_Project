@@ -145,7 +145,7 @@ def weighted_random_choice(rarities):
 # TODO: aggiungere input validation per controllare che la richiesta sia come ce lo aspettiamo
 # TODO: può farla solo admin
 # TODO: c'è un test già scritto, spostarlo in integration tests
-@app.route('/add', methods=['PUT'])
+@app.route('/gatchas', methods=['POST'])
 def add_gatcha_data():
     """
     Admins can use this endpoint to add a new gatcha character to the database.
@@ -219,7 +219,7 @@ def add_gatcha_data():
 
 
 
-@app.route('/delete/<gatcha_id>', methods=['DELETE'])
+@app.route('/gatchas/<gatcha_id>', methods=['DELETE'])
 def delete_gatcha(gatcha_id):
     """
     Admins can use this endpoint to delete a gatcha character from the database.

@@ -37,7 +37,7 @@ jobs:
         # questo comando scarica la collection e l'environment direttamente da Postman, senza che noi dobbiamo scaricarli
         run: |
           curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
-          postman login --with-api-key ${{ secrets.POSTMAN_ACCESS_KEY }}
+          postman login --with-api-key ${{ secrets.POSTMAN_AK2 }}
           postman collection run 26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3 -e 26720283-035d030c-9e92-4a67-a691-b1048e5a6dcb
 
 

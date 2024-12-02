@@ -90,6 +90,12 @@ def increase_balance():
         if user is None:
             return make_response(jsonify({"error": "User not found"}), 404)
         db_user.collection.update_one({"userID": userID}, {"$inc": {"balance": amount}})
+        transaction = {
+            "amount": amount,
+            "type": "increase",
+            "timestamp": datetime.now()
+        }
+        db_user.collection.update_one({"userID": userID}, {"$push": {"transactions": transaction}})
         return make_response(jsonify({"message": "Balance updated successfully"}), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
@@ -111,9 +117,31 @@ def decrease_balance():
         if user["balance"] < amount:
             return make_response(jsonify({"error": "Insufficient funds"}), 400)
         db_user.collection.update_one({"userID": userID}, {"$inc": {"balance": -amount}})
+        transaction = {
+            "amount": amount,
+            "type": "decrease",
+            "timestamp": datetime.now()
+        }
+        db_user.collection.update_one({"userID": userID}, {"$push": {"transactions": transaction}})
         return make_response(jsonify({"message": "Balance updated successfully"}), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
+    
+# endpoint to get the full list of transactions of a user
+@app.route('/transactions', methods=['GET'])
+def get_transactions():
+    try: 
+        userID = get_userID_from_jwt()
+    except Exception as e:
+        return make_response(jsonify({"error": "Error decoding token"}), 401)
+    try:
+        user = db_user.collection.find_one({"userID": userID})
+        if user is None:
+            return make_response(jsonify({"error": "User not found"}), 404)
+        return make_response(jsonify(user["transactions"]), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+
 
 # endpoint per fare i refund di una bid
 @app.route('/refund', methods=['POST'])

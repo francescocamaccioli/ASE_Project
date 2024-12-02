@@ -93,8 +93,6 @@ def register_user():
             return make_response(jsonify({"error": "Invalid email"}), 400)
         
         auth_db.users.insert_one(user)
-        # need to insert user also in db-user, with initializated fields
-        # non so se ha piu senso fare un endpoint in user che crea un utente con i campi inizializzati o se fare l'accesso al db-user direttamente qui e crearlo
         response = requests.post(ADMIN_GATEWAY_URL+"/user/init-user", json={"userID": user["userID"]})
         if response.status_code != 201:
             return make_response(jsonify({"error": "Could not initialize user, problem with the user microservice"}), 502)
@@ -315,7 +313,7 @@ def both_roles():
 @app.route('/test/echousername', methods=['GET'])
 def echo_username():
     try:
-        username = get_username_from_jwt() # TODO: cambiare esempio con get_userID_from_jwt()
+        username = get_userID_from_jwt() # TODO: cambiare esempio con get_userID_from_jwt()
     except Exception as e:
         return jsonify({"error": str(e)}), 401
 

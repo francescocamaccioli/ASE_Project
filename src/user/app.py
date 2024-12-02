@@ -134,6 +134,25 @@ def refund():
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
 
+# Endpoint per aggiungere un gatcha alla collezione di un utente
+# TODO: deve essere usabile solo dall'endpoint gatcha/roll e alla fine di un asta
+@app.route('/add_gatcha', methods=['POST'])
+def add_gatcha():
+    try: 
+        userID = get_userID_from_jwt()
+    except Exception as e:
+        return make_response(jsonify({"error": "Error decoding token"}), 401)
+    data = request.json
+    gatcha = data.get("gatcha_ID")
+    try:
+        user = db_user.collection.find_one({"userID": userID})
+        if user is None:
+            return make_response(jsonify({"error": "User not found"}), 404)
+        db_user.collection.update_one({"userID": userID}, {"$push": {"collection": gatcha}})
+        return make_response(jsonify({"message": "Gatcha added successfully"}), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+
 # Endpoint per verificare la connessione al database
 @app.route('/checkconnection', methods=['GET'])
 def check_connection():

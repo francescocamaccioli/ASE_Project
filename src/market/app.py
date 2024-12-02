@@ -24,6 +24,9 @@ def add_auction():
         userID = get_userID_from_jwt()
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 401)
+    
+    
+    
     auction = {
         "Auction_ID": Auctions.count_documents({}) + 1, # TODO: maybe add hash here (?)
         "Gatcha_ID": data.get("GatchaID"),
@@ -48,7 +51,7 @@ def delete_auction():
     if not auction_id:
         return make_response(jsonify({"error": "Auction_ID is required"}), 400)
     try:
-        auction = Auctions.find_one({"_id": bid["Auction_ID"]})
+        auction = Auctions.find_one({"Auction_ID": bid["Auction_ID"]})
         if not auction:
             return make_response(jsonify({"error": "Auction not found"}), 404)
         
@@ -63,7 +66,7 @@ def delete_auction():
             if response.status_code != 200:
                 return make_response(jsonify({"error": "Failed to refund previous winner"}), 500)
         
-        result = Auctions.delete_one({"_id": auction_id})
+        result = Auctions.delete_one({"Auction_ID": auction_id})
         if result.deleted_count == 1:
             return make_response(jsonify({"message": "Auction deleted successfully"}), 200)
         else:
@@ -86,7 +89,7 @@ def bid():
         "timestamp": datetime.now()
     }
     try:
-        auction = Auctions.find_one({"_id": bid["Auction_ID"]})
+        auction = Auctions.find_one({"Auction_ID": bid["Auction_ID"]})
         if not auction:
             return make_response(jsonify({"error": "Auction not found"}), 404)
         
@@ -105,21 +108,21 @@ def bid():
                 return make_response(jsonify({"error": "Failed to refund previous winner"}), 500)
         
         Auctions.update_one(
-            {"_id": bid["Auction_ID"]},
-            {"$set": {"current_price": bid["amount"], "Winner_ID": username}, "$push": {"bids": bid}}
+            {"Auction_ID": bid["Auction_ID"]},
+            {"$set": {"current_price": bid["amount"], "Winner_ID": userID}, "$push": {"bids": bid}}
         )
         return make_response(jsonify({"message": "Bid placed successfully"}), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
 
-@app.route('/get-auction', methods=['GET'])
+@app.route('/auction', methods=['GET'])
 def get_auction():
     data = request.json
-    auction_id = data.get("AuctionID")
+    auction_id = data.get("Auction_ID")
     if not auction_id:
         return make_response(jsonify({"error": "AuctionID is required"}), 400)
     try:
-        auction = Auctions.find_one({"_id": auction_id})
+        auction = Auctions.find_one({"Auction_ID": auction_id})
         if not auction:
             return make_response(jsonify({"error": "Auction not found"}), 404)
         return make_response(json_util.dumps(auction), 200)
@@ -127,7 +130,7 @@ def get_auction():
         return make_response(jsonify({"error": str(e)}), 500)
 
 # Endpoint per ottenere tutte le aste attive
-@app.route('/get-all-auctions', methods=['GET'])
+@app.route('/auctions', methods=['GET'])
 def get_all_auctions():
     try:
         auctions = list(Auctions.find({}))

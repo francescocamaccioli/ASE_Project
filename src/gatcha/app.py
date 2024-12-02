@@ -7,7 +7,9 @@ from pymongo.errors import ServerSelectionTimeoutError
 import bson.json_util as json_util
 import bson
 import uuid
-import auth_utils
+
+import requests
+from auth_utils import role_required, get_userID_from_jwt
 
 
 # for handling image uploads to MinIO
@@ -19,10 +21,11 @@ from minio.error import S3Error
 from rich.traceback import install
 install(show_locals=True)
 
-
-
+GATEWAY_URL = os.getenv("GATEWAY_URL")
 
 # region initializing vars ----------------------------------------
+
+ROLL_PRICE = 10
 
 RARITY_PROBABILITIES = {
     'comune': 0.5,       # 50%
@@ -148,7 +151,7 @@ def weighted_random_choice(rarities):
 @app.route('/gatchas', methods=['POST'])
 def add_gatcha_data():
     """
-    Admins can use this endpoint to add a new gatcha character to the database.
+    Admins can use this endpoint to add a new gatcha to the database.
 
     Request format. The request should be a multipart request that includes two parts:
     - 'file': The image file to upload.
@@ -222,7 +225,7 @@ def add_gatcha_data():
 @app.route('/gatchas/<gatcha_id>', methods=['DELETE'])
 def delete_gatcha(gatcha_id):
     """
-    Admins can use this endpoint to delete a gatcha character from the database.
+    Admins can use this endpoint to delete a gatcha from the database.
 
     Request format. The gatcha ID should be provided in the URL path.
     
@@ -233,7 +236,7 @@ def delete_gatcha(gatcha_id):
         if not gatcha_id:
             return make_response(json_util.dumps({"error": "Gatcha ID is required"}), 400)
 
-        # Find the gatcha character in the database
+        # Find the gatcha in the database
         gatcha = db[GATCHA_COLLECTION_NAME].find_one({'_id': gatcha_id})
 
         if not gatcha:
@@ -247,7 +250,7 @@ def delete_gatcha(gatcha_id):
             except S3Error as e:
                 return make_response(json_util.dumps({"error": f"Failed to delete image from MinIO: {str(e)}"}), 500)
 
-        # Delete the gatcha character from the database
+        # Delete the gatcha from the database
         result = db[GATCHA_COLLECTION_NAME].delete_one({'_id': gatcha_id})
 
         if result.deleted_count == 0:
@@ -262,32 +265,48 @@ def delete_gatcha(gatcha_id):
 
 # Endpoint per rollare un gatcha
 @app.route('/roll', methods=['GET'])
+@role_required('normalUser')
 def roll_gatcha():
     try:
+        try:
+            userID = get_userID_from_jwt()
+        except Exception as e:
+            return make_response(json_util.dumps({"error": str(e)}), 401)
+        
         # Estrai la rarità in base alle probabilità definite
         selected_rarity = weighted_random_choice(RARITY_PROBABILITIES)
         
-        # Query al database per ottenere un personaggio della rarità selezionata
+        # Query al database per ottenere un gatcha della rarità selezionata
         gachas = list(db[GATCHA_COLLECTION_NAME].find({"rarity": selected_rarity}))
 
         if not gachas:
-            return make_response(f"No character found for rarity {selected_rarity}\n", 404)
-        # Estrai un personaggio randomico dalla lista dei personaggi della rarità selezionata
-        character = random.choice(gachas) if gachas else None
+            return make_response(f"No gatcha found for rarity {selected_rarity}\n", 404)
+        # Estrai un gatcha randomico dalla lista dei personaggi della rarità selezionata
+        gatcha = random.choice(gachas) if gachas else None
         
-        # Gestisci l'eventualità che non ci sia un personaggio di quella rarità
-        if not character:
-            return make_response(f"No character found for rarity {selected_rarity}\n", 404)
+        # Gestisci l'eventualità che non ci sia un gatcha di quella rarità
+        if not gatcha:
+            return make_response(f"No gatcha found for rarity {selected_rarity}\n", 404)
         
-        # Increment NTot for the selected character
+        # Increment NTot for the selected gatcha
         db[GATCHA_COLLECTION_NAME].update_one(
-            {'_id': character['_id']},  # Trova il personaggio tramite il suo ID
+            {'_id': gatcha['_id']},  # Trova il gatcha tramite il suo ID
             {'$inc': {'NTot': 1}}       # Incrementa il campo NTot di 1
         )
-
-        ##TODO: dal JWT, prendi il nome utente, e aggiungerai il gatcha all'utente che ha quel nome utente; il JWT ci certifica che il nome utente che c'è scritto dentro appartiene davevro al proprietario (è autenticato
         
-        return make_response(json_util.dumps(character), 200)
+        jwt_token = request.headers.get('Authorization')
+        headers = {'Authorization': jwt_token}
+        
+        response = requests.post(GATEWAY_URL + "/user/decrease-balance", json={"userID": userID, "amount": ROLL_PRICE}, headers=headers)
+        
+        if response.status_code != 200:
+            return response
+        
+        response = requests.post(GATEWAY_URL + "/user/add-gatcha", json={"userID": userID, "gatcha_ID": gatcha['_id']}, headers=headers)
+        
+        if response.status_code != 200:
+            return response
+        
     except Exception as e:
         return make_response(str(e), 500)
     

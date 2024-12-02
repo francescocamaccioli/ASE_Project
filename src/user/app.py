@@ -2,6 +2,7 @@ import os
 from flask import Flask, request, make_response, jsonify
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
+import requests
 from auth_utils import decode_token, role_required, get_userID_from_jwt
 from datetime import datetime
 
@@ -9,6 +10,7 @@ app = Flask(__name__)
 
 # URLS dei microservizi
 GATCHA_URL = os.getenv('GATCHA_URL')
+GATEWAY_URL = os.getenv('GATEWAY_URL')
 MARKET_URL = os.getenv('MARKET_URL')
 
 
@@ -150,6 +152,42 @@ def add_gatcha():
             return make_response(jsonify({"error": "User not found"}), 404)
         db_user.collection.update_one({"userID": userID}, {"$push": {"collection": gatcha}})
         return make_response(jsonify({"message": "Gatcha added successfully"}), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+
+# Endpoint per restituire la collezione di un utente
+@app.route('/collection', methods=['GET'])
+def get_collection():
+    try: 
+        userID = get_userID_from_jwt()
+    except Exception as e:
+        return make_response(jsonify({"error": "Error decoding token"}), 401)
+    try:
+        user = db_user.collection.find_one({"userID": userID})
+        if user is None:
+            return make_response(jsonify({"error": "User not found"}), 404)
+        return make_response(jsonify(user["collection"]), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+    
+# Endpoint per ricevere informazioni su un gatcha nella collezione di un utente
+@app.route('/collection/<gatcha_ID>', methods=['GET'])
+def get_gatcha_from_collection(gatcha_ID):
+    try: 
+        userID = get_userID_from_jwt()
+    except Exception as e:
+        return make_response(jsonify({"error": "Error decoding token"}), 401)
+    try:
+        user = db_user.collection.find_one({"userID": userID})
+        if user is None:
+            return make_response(jsonify({"error": "User not found"}), 404)
+        if gatcha_ID not in user["collection"]:
+            return make_response(jsonify({"error": "Gatcha not found in collection"}), 404)
+        # GET request to Gatcha microservice to get gatcha info
+        response = requests.get(GATEWAY_URL + "/gatcha/gatchas/" + gatcha_ID)
+        if response.status_code != 200:
+            return make_response(jsonify({"error": "Failed to get gatcha info"}, response.text), 500)
+        return make_response(response.json(), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
 

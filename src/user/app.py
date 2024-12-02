@@ -2,7 +2,7 @@ import os
 from flask import Flask, request, make_response, jsonify
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
-from auth_utils import decode_token, role_required, get_userID_from_jwy
+from auth_utils import decode_token, role_required, get_userID_from_jwt
 from datetime import datetime
 
 app = Flask(__name__)
@@ -58,21 +58,19 @@ def delete_user():
     
 
 # Endpoint per ottenere un utente passando il nome utente nel body della richiesta
-@app.route('/get_user_from_name', methods=['GET'])
-def get_user_from_name():
-    data = request.get_json()  # Ottieni i dati JSON dalla richiesta
-    userID = data['userID']
+@app.route('/users/<userID>', methods=['GET'])
+def get_user_by_id(userID):
     try:
-        res = []
-        all = list(db_user.collection.find({'userID': userID}))
-        for element in all:
-            res.append({
-                'userID': element["userID"],
-                'balance': element["balance"],
-                'collection': element["collection"],
-                'transactions': element["transactions"]
-            })
-        return make_response(jsonify(res), 200)
+        user = db_user.collection.find_one({'userID': userID})
+        if user is None:
+            return make_response(jsonify({"error": "User not found"}), 404)
+        user_data = {
+            'userID': user["userID"],
+            'balance': user["balance"],
+            'collection': user["collection"],
+            'transactions': user["transactions"]
+        }
+        return make_response(jsonify(user_data), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
 
@@ -145,7 +143,9 @@ def check_connection():
         return make_response(jsonify({"message": "Connection to db-gatcha is successful!"}), 200)
     except ServerSelectionTimeoutError:
         return make_response(jsonify({"error": "Failed to connect to db-gatcha"}), 500)
-    
+
+
+# TODO: usare nome RESTful tipo /users/
 # Endpoint per recuperare tutti i log (da un database gatcha)
 @app.route('/getAll', methods=['GET'])
 def get_all_logs():

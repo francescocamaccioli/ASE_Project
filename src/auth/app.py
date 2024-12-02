@@ -77,7 +77,7 @@ def register_user():
             "role": 'normalUser'
         }
         
-        auth_db.users.insert_one(user)
+
 
         # commented to allow easier testing
         # Requires at least one uppercase letter.
@@ -91,14 +91,6 @@ def register_user():
 
         if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", payload['email']):
             return make_response(jsonify({"error": "Invalid email"}), 400)
-        
-        user = {
-            "username": payload['username'],
-            # non so se va fatto hash(hash(psw)+salt) qui o se l'user deve mandare già la password hashata
-            "password": bcrypt.hashpw(payload['password'].encode(), bcrypt.gensalt()),
-            "email": payload['email'],
-            "role": "normalUser"
-        }
         
         auth_db.users.insert_one(user)
         # need to insert user also in db-user, with initializated fields
@@ -323,7 +315,7 @@ def both_roles():
 @app.route('/test/echousername', methods=['GET'])
 def echo_username():
     try:
-        username = get_username_from_jwt()
+        username = get_username_from_jwt() # TODO: cambiare esempio con get_userID_from_jwt()
     except Exception as e:
         return jsonify({"error": str(e)}), 401
 

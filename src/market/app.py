@@ -5,7 +5,7 @@ from pymongo import MongoClient
 import bson.json_util as json_util
 from pymongo.errors import ServerSelectionTimeoutError
 import requests
-from auth_utils import role_required, get_username_from_jwt
+from auth_utils import role_required, get_userID_from_jwt
 
 USER_URL = os.getenv('USER_URL')
 
@@ -21,13 +21,13 @@ app = Flask(__name__)
 def add_auction():
     data = request.json
     try: 
-        username = get_username_from_jwt()
+        userID = get_userID_from_jwt()
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 401)
     auction = {
         "Auction_ID": Auctions.count_documents({}) + 1, # TODO: maybe add hash here (?)
         "Gatcha_ID": data.get("GatchaID"),
-        "Auctioner_ID": username,
+        "Auctioner_ID": userID,
         "Winner_ID": "",
         "starting_price": data.get("starting_price"),
         "current_price": data.get("starting_price"), # current highest bid value, to be refounded if another higher bid is placed
@@ -75,13 +75,13 @@ def delete_auction():
 def bid():
     data = request.json
     try: 
-        username = get_username_from_jwt()
+        userID = get_userID_from_jwt()
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 401)
     bid = {
         "Bid_ID": Bids.count_documents({}) + 1,
         "Auction_ID": data.get("Auction_ID"),
-        "User_ID": username,
+        "User_ID": userID,
         "amount": data.get("amount"),
         "timestamp": datetime.now()
     }

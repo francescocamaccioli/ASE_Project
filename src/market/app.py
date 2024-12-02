@@ -27,8 +27,6 @@ def add_auction():
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 401)
     
-    #TODO: check if gatcha exists in user collection
-    #TODO: erase gatcha from user collection
     
     auction = {
         "Auction_ID": Auctions.count_documents({}) + 1, # TODO: maybe add hash here (?)

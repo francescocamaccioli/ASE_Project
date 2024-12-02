@@ -196,6 +196,8 @@ def remove_gatcha():
         user = db_user.collection.find_one({"userID": userID})
         if user is None:
             return make_response(jsonify({"error": "User not found"}), 404)
+        if gatcha not in user["collection"]:
+            return make_response(jsonify({"error": "Gatcha not found in collection"}), 404)
         db_user.collection.update_one(
             {"userID": userID},
             {"$pull": {"collection": gatcha}},
@@ -234,7 +236,7 @@ def get_gatcha_from_collection(gatcha_ID):
         if gatcha_ID not in user["collection"]:
             return make_response(jsonify({"error": "Gatcha not found in collection"}), 404)
         # GET request to Gatcha microservice to get gatcha info
-        response = requests.get(GATEWAY_URL + "/gatcha/gatchas/" + gatcha_ID)
+        response = requests.get(GATCHA_URL + "/gatchas/" + gatcha_ID)    #erased request to gateway
         if response.status_code != 200:
             return make_response(jsonify({"error": "Failed to get gatcha info"}, response.text), 500)
         return make_response(response.json(), 200)

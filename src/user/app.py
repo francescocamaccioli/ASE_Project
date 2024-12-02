@@ -182,6 +182,28 @@ def add_gatcha():
         return make_response(jsonify({"message": "Gatcha added successfully"}), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
+    
+# Endpoint per eliminare un gatcha dalla collezione di un utente
+@app.route('/remove_gatcha', methods=['POST'])
+def remove_gatcha():
+    try: 
+        userID = get_userID_from_jwt()
+    except Exception as e:
+        return make_response(jsonify({"error": "Error decoding token"}), 401)
+    data = request.json
+    gatcha = data.get("gatcha_ID")
+    try:
+        user = db_user.collection.find_one({"userID": userID})
+        if user is None:
+            return make_response(jsonify({"error": "User not found"}), 404)
+        db_user.collection.update_one(
+            {"userID": userID},
+            {"$pull": {"collection": gatcha}},
+            {"multi": False}  # This ensures only one instance is removed
+        )
+        return make_response(jsonify({"message": "Gatcha removed successfully"}), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
 
 # Endpoint per restituire la collezione di un utente
 @app.route('/collection', methods=['GET'])

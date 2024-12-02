@@ -147,7 +147,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "test/testimage.png"
+									"src": "postman-cloud:///1efa9f59-fd03-49c0-a6cb-30fe484b839c"
 								},
 								{
 									"key": "json",
@@ -228,11 +228,11 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "test/testimage.png"
+									"src": "postman-cloud:///1efa9f59-fd03-49c0-a6cb-30fe484b839c"
 								},
 								{
 									"key": "json",
-									"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"comune\"\n}",
+									"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"raro\"\n}",
 									"type": "text"
 								}
 							]
@@ -309,7 +309,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "test/testimage.png"
+									"src": "postman-cloud:///1efa9f59-fd03-49c0-a6cb-30fe484b839c"
 								},
 								{
 									"key": "json",
@@ -390,7 +390,88 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "test/testimage.png"
+									"src": "postman-cloud:///1efa9f59-fd03-49c0-a6cb-30fe484b839c"
+								},
+								{
+									"key": "json",
+									"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"leggendario\"\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{ADMIN_GATEWAY_URL}}/gatcha/gatchas",
+							"host": [
+								"{{ADMIN_GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"gatchas"
+							]
+						},
+						"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+					},
+					"response": []
+				},
+				{
+					"name": "add another gatcha leggendario",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"// Store the _id from the response inside an environment variable \"gatcha_id\"",
+									"pm.environment.set(\"gatcha_id\", pm.response.json().data._id);",
+									"",
+									"",
+									"// Now we have to check if we can correctly download the image we just uploaded ",
+									"// (it has been uploaded to a MinIO bucket)",
+									"",
+									"// Extracting the image URL from the response",
+									"const imageURL = pm.response.json().data.image;",
+									"pm.test('Check if response image URL is valid', function () {",
+									"    pm.expect(pm.response.json().data.image).to.be.a('string').and.to.not.be.empty;",
+									"});",
+									"",
+									"const completeImageURL = pm.environment.get(\"GATEWAY_URL\") + imageURL;",
+									"",
+									"console.log(\"You can check the content of the image at: \" + completeImageURL);",
+									"",
+									"// Sending a request to the image URL to check if it is appropriate",
+									"pm.sendRequest({",
+									"    url: completeImageURL,",
+									"    method: 'GET',",
+									"}, function (err, res) {",
+									"    pm.test('Image request is successful', function () {",
+									"        pm.expect(res).to.have.status(200);",
+									"    });",
+									"    pm.test('Image content type is valid', function () {",
+									"        pm.expect(res.headers.get('Content-Type')).to.include('image');",
+									"    });",
+									"});",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "postman-cloud:///1efa9f59-fd03-49c0-a6cb-30fe484b839c"
 								},
 								{
 									"key": "json",
@@ -626,185 +707,6 @@
 			]
 		},
 		{
-			"name": "user microservice",
-			"item": [
-				{
-					"name": "/user/checkconnection",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Response status code is 200\", function () {",
-									"    pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "formdata",
-							"formdata": []
-						},
-						"url": {
-							"raw": "{{GATEWAY_URL}}/user/checkconnection",
-							"host": [
-								"{{GATEWAY_URL}}"
-							],
-							"path": [
-								"user",
-								"checkconnection"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "/user/getAll",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Response status code is 200\", function () {",
-									"    pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{GATEWAY_URL}}/user/getAll",
-							"host": [
-								"{{GATEWAY_URL}}"
-							],
-							"path": [
-								"user",
-								"getAll"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "/user/get_user_from_name",
-					"event": [
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						},
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"username\": \"testuser\"\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{GATEWAY_URL}}/user/get_user_from_name",
-							"host": [
-								"{{GATEWAY_URL}}"
-							],
-							"path": [
-								"user",
-								"get_user_from_name"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "market microservice",
-			"item": [
-				{
-					"name": "/market/checkconnection",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Response status code is 200\", function () {",
-									"    pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"method": "GET",
-						"header": [],
-						"body": {
-							"mode": "formdata",
-							"formdata": []
-						},
-						"url": {
-							"raw": "{{GATEWAY_URL}}/market/checkconnection",
-							"host": [
-								"{{GATEWAY_URL}}"
-							],
-							"path": [
-								"market",
-								"checkconnection"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
 			"name": "auth",
 			"item": [
 				{
@@ -969,6 +871,191 @@
 								"auth",
 								"test",
 								"echousername"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "user microservice",
+			"item": [
+				{
+					"name": "/user/checkconnection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/checkconnection",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"checkconnection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/user/getAll",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test(\"Extract and set user_id to environment variable\", function () {",
+									"    var responseBody = pm.response.json();",
+									"    pm.environment.set(\"user_id\", responseBody[0].userID);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/getAll",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"getAll"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/user/get_user_from_name",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/users/{{user_id}}",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"users",
+								"{{user_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "market microservice",
+			"item": [
+				{
+					"name": "/market/checkconnection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": []
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/market/checkconnection",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"market",
+								"checkconnection"
 							]
 						}
 					},

@@ -2,7 +2,6 @@
 # serve per evitare di ripetere le stesse variabili in più servizi, senza dover fare copia-incolla
 x-common-environment:
   &common-env
-  JWT_SECRET: supersecret # TODO: usare i segreti di docker come visto in lab?
   GATCHA_URL: http://gatcha:5000
   USER_URL: http://user:5000
   MARKET_URL: http://market:5000
@@ -45,6 +44,7 @@ services:
       <<: *common-env
       AUTH_DB_URL: auth-db:27017
       AUTH_DB_NAME: auth_db
+      JWT_SECRET: supersecret # TODO: usare i segreti di docker come visto in lab?
 
   auth-db:
     image: mongo:latest

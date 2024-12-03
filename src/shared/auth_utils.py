@@ -10,11 +10,7 @@ import requests
 # ATTENZIONE: OGNI VOLTA CHE SI MODIFICA, LA NUOVA VERSIONE VA COPIATA IN TUTTI I MICROSERVIZI
 # per farlo, usare il file /shared/sync.py
 
-JWT_SECRET = getenv("JWT_SECRET")
 ADMIN_GATEWAY_URL = getenv("ADMIN_GATEWAY_URL")
-
-if not JWT_SECRET or JWT_SECRET.strip() == "":
-    raise ValueError("JWT_SECRET environment variable is not set or is empty")
 
 def introspect_token(token):
     """Introspect the token using the /auth/introspect endpoint."""

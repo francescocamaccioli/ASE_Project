@@ -55,7 +55,8 @@ def role_required(*required_roles):
                 logger.error("Error while getting the role from the JWT: " + str(e))
                 return jsonify({"error": "Invalid token: " + str(e)}), 401
             
-            if not any(role in required_roles for role in user_role):
+            if user_role not in required_roles:
+                logger.warning(f"User with role {user_role} tried to access a resource that requires one of the following roles: {required_roles}")
                 return jsonify({"error": "Forbidden"}), 403
             
             return f(*args, **kwargs)

@@ -52,6 +52,7 @@ except ServerSelectionTimeoutError:
 
 # region ROUTES DEFINITIONS -------------------------------
 
+
 @app.route('/register', methods=['POST'])
 def register_user():
     try:
@@ -141,27 +142,29 @@ def token_endpoint():
                 "iat": datetime.now(), # JWT Issued At
                 "exp": datetime.now() + timedelta(minutes=TOKEN_EXPIRATION_MINUTES),
                 
-                "iss": "https://auth.example.com", # JWT Issuer
+                "iss": "https://auth.ladygatcha.com", # JWT Issuer example
                 "jti": str(uuid.uuid4()) # JWT ID: univocal identifier for the token
             },
             JWT_SECRET,
             algorithm="HS256"
         )
         
-        # TODO: lo ho commentato perché basta access_token. Va bene? Oppure serve per via dello standard?
-        # id_token = jwt.encode(
-        #     {
-        #         "sub": username,
-        #         "email": user["email"],
-        #         "role": user["role"],
-        #         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=TOKEN_EXPIRATION_MINUTES)
-        #     },
-        #     JWT_SECRET,
-        #     algorithm="HS256"
-        # )
+        # TODO: quando uno fa logout, dovrebbe fae due richeiste, una per l'access token e una per l'id token?
+        id_token = jwt.encode(
+            {
+                "sub": username,
+                "email": user["email"],
+                "role": user["role"],
+                "exp": datetime.now() + timedelta(minutes=TOKEN_EXPIRATION_MINUTES),
+                "jti": str(uuid.uuid4()) # JWT ID: univocal identifier for the token
+            },
+            JWT_SECRET,
+            algorithm="HS256"
+        )
 
         return jsonify({
             "access_token": access_token,
+            "id_token": id_token,
             "token_type": "Bearer"
         })
         
@@ -262,16 +265,46 @@ def introspect_endpoint():
 
     try:
         claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        return jsonify({
-            "active": True,
-            "sub": claims["sub"],
-            "exp": claims["exp"]
-        })
+        if is_token_revoked(claims["jti"]):
+            return jsonify({"active": False, "error": "Token revoked"}), 401
+        return jsonify(claims)
     except jwt.ExpiredSignatureError:
         return jsonify({"active": False, "error": "Token expired"}), 401
     except jwt.InvalidTokenError:
         return jsonify({"active": False, "error": "Invalid token"}), 401 
-    
+
+
+
+
+# In-memory storage for revoked tokens
+revoked_tokens = set()
+
+# questa è la logout praticamente
+@app.route('/tokens/revoke', methods=['POST'])
+def revoke_token():
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized. Your request doesn't contain an authorization header."}), 401
+
+    token = auth_header.split(" ")[1]
+    try:
+        claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        token_id = claims["jti"]
+        revoke(token_id)
+        return jsonify({"message": "Token revoked successfully"}), 200
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token expired"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Invalid token"}), 401
+
+def revoke(token_id):
+    revoked_tokens.add(token_id)
+
+def is_token_revoked(token_id):
+    if token_id in revoked_tokens:
+        return True
+    else:
+        return False
 
 
 # endregion ROUTES DEFINITIONS

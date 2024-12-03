@@ -11,6 +11,7 @@ from auth_utils import role_required, get_userID_from_jwt
 import bcrypt
 import os
 import requests
+import redis
 
 # for better error messages
 from rich.traceback import install
@@ -276,8 +277,8 @@ def introspect_endpoint():
 
 
 
-# In-memory storage for revoked tokens
-revoked_tokens = set()
+# Initialize Redis connection
+redis_client = redis.StrictRedis(host='redis', port=6379, db=0, decode_responses=True)
 
 @app.route('/tokens/revoke', methods=['POST'])
 def revoke_token():
@@ -310,10 +311,10 @@ def revoke_token():
         return jsonify({"error": "Invalid token"}), 401
 
 def revoke(token_id):
-    revoked_tokens.add(token_id)
+    redis_client.set(token_id, 'revoked')
 
 def is_token_revoked(token_id):
-    return token_id in revoked_tokens
+    return redis_client.exists(token_id) == 1
 
 
 # endregion ROUTES DEFINITIONS

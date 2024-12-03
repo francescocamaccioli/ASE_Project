@@ -86,6 +86,16 @@ services:
     environment:
       <<: *common-env
 
+
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+
   # MongoDB for gatcha (Database per il servizio Gatcha)
   db-gatcha:
     image: mongo:latest
@@ -141,5 +151,6 @@ volumes:
   dbdata-auth: # Volume per db-auth
   dbdata-market:
   minio-volume:  # Volume per i bucker MinIO
+  redis-data:
 
 # TODO: mettere su docker network separate tipo come avevo fatto nel disegno, però potrebbe volerci il bridge invece che dover mettere il gateway su due network allo stesso tempo

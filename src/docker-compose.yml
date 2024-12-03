@@ -19,6 +19,7 @@ services:
       - gatcha
       - user
       - market
+      - auth
     environment:
       <<: *common-env
       MINIO_STORAGE_URL: http://minio-storage:9000
@@ -32,6 +33,7 @@ services:
       - gatcha
       - user
       - market
+      - auth
     environment:
       <<: *common-env
 
@@ -39,7 +41,7 @@ services:
     build: ./auth
     depends_on:
       - auth-db
-      # - user # TODO: dipende da user?
+      - redis
     environment:
       <<: *common-env
       AUTH_DB_URL: auth-db:27017
@@ -48,8 +50,8 @@ services:
 
   auth-db:
     image: mongo:latest
-    ports:
-      - "27016:27017"  # TODO: è esposta solo per debugging, da commentare in produzione.
+    # ports:
+    #   - "27016:27017"  # è esposta solo per debugging, da commentare in produzione.
     volumes:
       - dbdata-auth:/data/db
     environment:
@@ -99,8 +101,8 @@ services:
   # MongoDB for gatcha (Database per il servizio Gatcha)
   db-gatcha:
     image: mongo:latest
-    ports:
-      - "27017:27017"  # TODO: è esposta solo per debugging, da commentare in produzione.
+    # ports:
+    # - "27017:27017"  # è esposta solo per debugging, da commentare in produzione.
     volumes:
       - dbdata-gatcha:/data/db
       - ./mongo/seed-data:/docker-entrypoint-initdb.d # mongo, all'avvio, esegue automaticamente tutti i file .js che trova in quella cartella. serve per popolare con i dati iniziali. see: https://stackoverflow.com/questions/42912755/how-to-create-a-db-for-mongodb-container-on-start-up/42917632#42917632
@@ -111,8 +113,8 @@ services:
   # MongoDB for user (Database per il servizio User)
   db-user:
     image: mongo:latest
-    ports:
-      - "27018:27017"  # TODO: è esposta solo per debugging, da commentare in produzione.
+    # ports:
+    #   - "27018:27017"
     volumes:
       - dbdata-user:/data/db
     environment:

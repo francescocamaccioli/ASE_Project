@@ -37,9 +37,12 @@ auth_db= mongo_client[AUTH_DB_NAME]
 
 
 # adding to the database a test admin user
+test_admin_pasword = "password123"
+test_admin_hashed_pasword = bcrypt.hashpw(test_admin_pasword.encode(), bcrypt.gensalt())
 test_admin_user = {
     "username": "adminuser",
-    "password": "password123",
+    "userID": str(uuid.uuid4()),
+    "password": test_admin_hashed_pasword,
     "email": "adminuser@example.com",
     "role": "adminUser"
 }
@@ -151,7 +154,6 @@ def token_endpoint():
             algorithm="HS256"
         )
         
-        # TODO: quando uno fa logout, dovrebbe fae due richeiste, una per l'access token e una per l'id token?
         id_token = jwt.encode(
             {
                 "sub": username,
@@ -255,8 +257,6 @@ def userinfo_endpoint():
 
 
 """
-TODO: ue use this ONLY if we use CENTRALIZED token validation
-
 Validates the access token. This endpoint is called directly by microservices or the API Gateway, IF we use centralized token validation.
 Process :
 - Accepts a token in the request body.
@@ -355,13 +355,13 @@ def both_roles():
 
 
 # When you send a request to this route, you also send you JWT token.
-# It extracs the username from the JWT, and echoes it to you.
-@app.route('/test/echousername', methods=['GET'])
+# It extracs the ID from the JWT, and echoes it to you.
+@app.route('/userid', methods=['GET'])
 def echo_username():
     try:
-        username = get_userID_from_jwt() # TODO: cambiare esempio con get_userID_from_jwt()
+        username = get_userID_from_jwt()
     except Exception as e:
-        return jsonify({"error": str(e)}), 401
+        return jsonify({"error": e}), 401
 
     return jsonify({
         "message": "Your username was successfully extracted from the JWT token you sent with this request",

@@ -16,12 +16,12 @@ logger = logging.getLogger(__name__)
 # ATTENZIONE: OGNI VOLTA CHE SI MODIFICA, LA NUOVA VERSIONE VA COPIATA IN TUTTI I MICROSERVIZI
 # per farlo, usare il file /shared/sync.py
 
-AUTH_URL = getenv("AUTH_URL")
+ADMIN_GATEWAY_URL = getenv("ADMIN_GATEWAY_URL")
 
 
 def introspect_token(token):
     """Introspect the token using the /auth/introspect endpoint."""
-    response = requests.post(f"{AUTH_URL}/introspect", data={"token": token})
+    response = requests.post(f"{ADMIN_GATEWAY_URL}/auth/introspect", data={"token": token})
     if response.status_code == 200:
         claims = json.loads(response.text)
         logger.debug("Introspected token: " + str(claims))

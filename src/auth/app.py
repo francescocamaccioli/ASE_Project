@@ -301,8 +301,8 @@ def revoke_token():
         auth_token_id = auth_claims["jti"]
         identity_token_id = identity_claims["jti"]
 
-        revoke(auth_token_id)
-        revoke(identity_token_id)
+        revoke(auth_token_id, auth_claims["exp"])
+        revoke(identity_token_id, identity_claims["exp"])
 
         return jsonify({"message": "Tokens revoked successfully"}), 200
     except jwt.ExpiredSignatureError:
@@ -310,8 +310,9 @@ def revoke_token():
     except jwt.InvalidTokenError:
         return jsonify({"error": "Invalid token"}), 401
 
-def revoke(token_id):
-    redis_client.set(token_id, 'revoked')
+def revoke(token_id, exp):
+    expiration_time = datetime.fromtimestamp(exp) - datetime.now()
+    redis_client.setex(token_id, expiration_time, 'revoked')
 
 def is_token_revoked(token_id):
     return redis_client.exists(token_id) == 1

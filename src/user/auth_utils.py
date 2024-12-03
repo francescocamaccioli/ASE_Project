@@ -2,6 +2,12 @@ from flask import request, jsonify
 from functools import wraps
 from os import getenv
 import requests
+import json
+import logging
+
+logging.getLogger('pymongo').setLevel(logging.WARNING)
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # SHARED FILE
 # This file contains utility functions for decentralized authentication and authorization
@@ -12,12 +18,20 @@ import requests
 
 ADMIN_GATEWAY_URL = getenv("ADMIN_GATEWAY_URL")
 
+
 def introspect_token(token):
     """Introspect the token using the /auth/introspect endpoint."""
     response = requests.post(f"{ADMIN_GATEWAY_URL}/auth/introspect", data={"token": token})
     if response.status_code == 200:
-        return response.json(), None
-    return None, response.json().get("error", "Unknown error")
+        claims = json.loads(response.text)
+        logger.debug("Introspected token: " + str(claims))
+        return claims
+    elif response.status_code == 401:
+        logger.warning("The server returned 401 while introspecting the token" + response.text)
+        raise ValueError("Invalid token: " + json.loads(response.text).get("error", "Unknown error"))
+    else:
+        logger.error("The server responded with an unexpected status code " + response.status_code + " while introspecting the token: " + response.text)
+        raise ValueError("Error while introspecting token: " + response.text)
 
 def role_required(*required_roles):
     """Decorator to check if the user has the required roles."""
@@ -29,17 +43,25 @@ def role_required(*required_roles):
                 return jsonify({"error": "Missing or invalid authorization header"}), 401
             
             token = auth_header.split(" ")[1]
-            claims, error = introspect_token(token)
-            if error:
-                return jsonify({"error": error}), 401
+            try:
+                claims = introspect_token(token)
+            except Exception as e:
+                logger.error("Error while gettint the claims from the token: " + str(e))
+                return jsonify({"error": e}), 401
             
-            user_role = claims.get("role", [])
+            try:
+                user_role = claims.get("role")
+            except Exception as e:
+                logger.error("Error while getting the role from the JWT: " + str(e))
+                return jsonify({"error": "Invalid token: " + str(e)}), 401
+            
             if not any(role in required_roles for role in user_role):
                 return jsonify({"error": "Forbidden"}), 403
             
             return f(*args, **kwargs)
         return decorated_function
     return decorator
+
 
 def get_userID_from_jwt():
     """Extract user ID from JWT token."""
@@ -48,8 +70,15 @@ def get_userID_from_jwt():
         return None, "Missing or invalid authorization header"
     
     token = auth_header.split(" ")[1]
-    claims, error = introspect_token(token)
-    if error:
-        return None, error
     
-    return claims.get("user_id"), None
+    try:
+        claims = introspect_token(token)
+        userID = claims["sub"] # the user ID is stored in the "sub" field
+        if not userID:
+            raise ValueError("User ID not found in the token")
+        logger.debug(f"Found user ID inside get_userID_from_jwt(): {userID}")
+    except Exception as e:
+        logger.error("Error while getting the userID. " + str(e))
+        return jsonify({"error": "Error while getting the userID. " + e}), 401
+    return userID
+    

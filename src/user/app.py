@@ -5,8 +5,14 @@ from pymongo.errors import ServerSelectionTimeoutError
 import requests
 from auth_utils import role_required, get_userID_from_jwt
 from datetime import datetime
+import json
+import logging
 
+
+
+logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
+logger = logging.getLogger(__name__)
 
 # URLS dei microservizi
 GATCHA_URL = os.getenv('GATCHA_URL')
@@ -82,10 +88,12 @@ def increase_balance():
     try: 
         userID = get_userID_from_jwt()
     except Exception as e:
+        logger.warning("Error increasing balance: " + str(e))
         return make_response(jsonify({"error": "Error decoding token"}), 401)
     data = request.json
     amount = data.get("amount")
     try:
+        logger.debug("Searching for user with userID: " + str(userID))
         user = db_user.collection.find_one({"userID": userID})
         if user is None:
             return make_response(jsonify({"error": "User not found"}), 404)
@@ -98,6 +106,7 @@ def increase_balance():
         db_user.collection.update_one({"userID": userID}, {"$push": {"transactions": transaction}})
         return make_response(jsonify({"message": "Balance updated successfully"}), 200)
     except Exception as e:
+        logger.warning("Error increasing balance: " + str(e))
         return make_response(jsonify({"error": str(e)}), 500)
     
 # endpoint to decrease the balance of a user

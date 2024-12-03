@@ -1,7 +1,13 @@
-import jwt
 from flask import request, jsonify
 from functools import wraps
 from os import getenv
+import requests
+import json
+import logging
+
+logging.getLogger('pymongo').setLevel(logging.WARNING)
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # SHARED FILE
 # This file contains utility functions for decentralized authentication and authorization
@@ -10,73 +16,70 @@ from os import getenv
 # ATTENZIONE: OGNI VOLTA CHE SI MODIFICA, LA NUOVA VERSIONE VA COPIATA IN TUTTI I MICROSERVIZI
 # per farlo, usare il file /shared/sync.py
 
-
-JWT_SECRET = getenv("JWT_SECRET")
-
-if not JWT_SECRET or JWT_SECRET.strip() == "":
-    raise ValueError("JWT_SECRET environment variable is not set or is empty")
+ADMIN_GATEWAY_URL = getenv("ADMIN_GATEWAY_URL")
 
 
+def introspect_token(token):
+    """Introspect the token using the /auth/introspect endpoint."""
+    response = requests.post(f"{ADMIN_GATEWAY_URL}/auth/introspect", data={"token": token})
+    if response.status_code == 200:
+        claims = json.loads(response.text)
+        logger.debug("Introspected token: " + str(claims))
+        return claims
+    elif response.status_code == 401:
+        logger.warning("The server returned 401 while introspecting the token" + response.text)
+        raise ValueError("Invalid token: " + json.loads(response.text).get("error", "Unknown error"))
+    else:
+        logger.error("The server responded with an unexpected status code " + response.status_code + " while introspecting the token: " + response.text)
+        raise ValueError("Error while introspecting token: " + response.text)
 
-# utility function, used only inside this file
-# usage: token_payload, error = decode_token()
-def decode_token():
-    """Extract and decode the token from the Authorization header."""
+def role_required(*required_roles):
+    """Decorator to check if the user has the required roles."""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            auth_header = request.headers.get('Authorization')
+            if not auth_header or not auth_header.startswith("Bearer "):
+                return jsonify({"error": "Missing or invalid authorization header"}), 401
+            
+            token = auth_header.split(" ")[1]
+            try:
+                claims = introspect_token(token)
+            except Exception as e:
+                logger.error("Error while gettint the claims from the token: " + str(e))
+                return jsonify({"error": e}), 401
+            
+            try:
+                user_role = claims.get("role")
+            except Exception as e:
+                logger.error("Error while getting the role from the JWT: " + str(e))
+                return jsonify({"error": "Invalid token: " + str(e)}), 401
+            
+            if user_role not in required_roles:
+                logger.warning(f"User with role {user_role} tried to access a resource that requires one of the following roles: {required_roles}")
+                return jsonify({"error": "Forbidden"}), 403
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+
+def get_userID_from_jwt():
+    """Extract user ID from JWT token."""
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith("Bearer "):
         return None, "Missing or invalid authorization header"
     
-    token = auth_header.split(" ")[1]  # Get the token part
+    token = auth_header.split(" ")[1]
     
     try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        return payload, None
-    except jwt.ExpiredSignatureError:
-        return None, "Token expired"
-    except jwt.InvalidTokenError:
-        return None, "Invalid token"
-
-
-
-
-def role_required(*required_roles):
-    """Decorator to enforce role-based authorization:
-    If the JWT you sent doesn't contain one of the required_roles, you won't be authorized to continue.
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            token_payload, error = decode_token()
-            if error:
-                return jsonify({'error': error}), 401
-
-            # Check the role in the JWT payload
-            user_role = token_payload.get("role", "")
-            if user_role not in required_roles:
-                if len(required_roles) == 1:
-                    return jsonify({'error': f'Unauthorized: requires the role {required_roles[0]}'}), 403
-                else:
-                    roles_str = " or ".join(required_roles)
-                    return jsonify({'error': f'Unauthorized: requires one of the roles {roles_str}'}), 403
-
-            # Call the original function
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
-
-
-def get_userID_from_jwt():
-    """
-    Returns the userID from the JWT payload (reading the "sub" field).
-    This userID should be guaranteed to be authenticated by the JWT.
-    """
-    token_payload, error = decode_token()
-    if error:
-        raise ValueError(f"Error decoding token: {error}")
-    
-    # get the userID from the JWT, and return it
-    userID = token_payload.get("sub", "")
-    if not userID:
-        raise ValueError('userID not found in token')
+        claims = introspect_token(token)
+        userID = claims["sub"] # the user ID is stored in the "sub" field
+        if not userID:
+            raise ValueError("User ID not found in the token")
+        logger.debug(f"Found user ID inside get_userID_from_jwt(): {userID}")
+    except Exception as e:
+        logger.error("Error while getting the userID. " + str(e))
+        return jsonify({"error": "Error while getting the userID. " + e}), 401
     return userID
+    

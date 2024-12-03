@@ -11,6 +11,7 @@ from auth_utils import role_required, get_userID_from_jwt
 import bcrypt
 import os
 import requests
+import redis
 
 # for better error messages
 from rich.traceback import install
@@ -51,6 +52,7 @@ except ServerSelectionTimeoutError:
 
 
 # region ROUTES DEFINITIONS -------------------------------
+
 
 @app.route('/register', methods=['POST'])
 def register_user():
@@ -141,27 +143,29 @@ def token_endpoint():
                 "iat": datetime.now(), # JWT Issued At
                 "exp": datetime.now() + timedelta(minutes=TOKEN_EXPIRATION_MINUTES),
                 
-                "iss": "https://auth.example.com", # JWT Issuer
+                "iss": "https://auth.ladygatcha.com", # JWT Issuer example
                 "jti": str(uuid.uuid4()) # JWT ID: univocal identifier for the token
             },
             JWT_SECRET,
             algorithm="HS256"
         )
         
-        # TODO: lo ho commentato perché basta access_token. Va bene? Oppure serve per via dello standard?
-        # id_token = jwt.encode(
-        #     {
-        #         "sub": username,
-        #         "email": user["email"],
-        #         "role": user["role"],
-        #         "exp": datetime.datetime.utcnow() + datetime.timedelta(minutes=TOKEN_EXPIRATION_MINUTES)
-        #     },
-        #     JWT_SECRET,
-        #     algorithm="HS256"
-        # )
+        # TODO: quando uno fa logout, dovrebbe fae due richeiste, una per l'access token e una per l'id token?
+        id_token = jwt.encode(
+            {
+                "sub": username,
+                "email": user["email"],
+                "role": user["role"],
+                "exp": datetime.now() + timedelta(minutes=TOKEN_EXPIRATION_MINUTES),
+                "jti": str(uuid.uuid4()) # JWT ID: univocal identifier for the token
+            },
+            JWT_SECRET,
+            algorithm="HS256"
+        )
 
         return jsonify({
             "access_token": access_token,
+            "id_token": id_token,
             "token_type": "Bearer"
         })
         
@@ -262,16 +266,56 @@ def introspect_endpoint():
 
     try:
         claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        return jsonify({
-            "active": True,
-            "sub": claims["sub"],
-            "exp": claims["exp"]
-        })
+        if is_token_revoked(claims["jti"]):
+            return jsonify({"active": False, "error": "Token revoked"}), 401
+        return jsonify(claims)
     except jwt.ExpiredSignatureError:
         return jsonify({"active": False, "error": "Token expired"}), 401
     except jwt.InvalidTokenError:
         return jsonify({"active": False, "error": "Invalid token"}), 401 
-    
+
+
+
+
+# Initialize Redis connection
+redis_client = redis.StrictRedis(host='redis', port=6379, db=0, decode_responses=True)
+
+@app.route('/tokens/revoke', methods=['POST'])
+def revoke_token():
+    auth_header = request.headers.get('Authorization')
+    identity_header = request.headers.get('Identity')
+
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized. Your request doesn't contain an authorization header."}), 401
+
+    if not identity_header or not identity_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized. Your request doesn't contain an identity header."}), 401
+
+    auth_token = auth_header.split(" ")[1]
+    identity_token = identity_header.split(" ")[1]
+
+    try:
+        auth_claims = jwt.decode(auth_token, JWT_SECRET, algorithms=["HS256"])
+        identity_claims = jwt.decode(identity_token, JWT_SECRET, algorithms=["HS256"])
+
+        auth_token_id = auth_claims["jti"]
+        identity_token_id = identity_claims["jti"]
+
+        revoke(auth_token_id, auth_claims["exp"])
+        revoke(identity_token_id, identity_claims["exp"])
+
+        return jsonify({"message": "Tokens revoked successfully"}), 200
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token expired"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Invalid token"}), 401
+
+def revoke(token_id, exp):
+    expiration_time = datetime.fromtimestamp(exp) - datetime.now()
+    redis_client.setex(token_id, expiration_time, 'revoked')
+
+def is_token_revoked(token_id):
+    return redis_client.exists(token_id) == 1
 
 
 # endregion ROUTES DEFINITIONS

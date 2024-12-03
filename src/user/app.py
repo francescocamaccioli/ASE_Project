@@ -35,7 +35,10 @@ def init_user():
         
         if userExists(payload.get("userID")):
             return make_response(jsonify({"error": "User already exists"}), 400)
-
+        
+        if db_user.collection.find_one({"username": payload.get("username")}) is not None:
+            return make_response(jsonify({"error": "Username already exists"}), 400)
+        
         user = {
             "userID": payload.get("userID"),
             "balance": 0,
@@ -73,6 +76,21 @@ def get_user_by_id(userID):
             'transactions': user["transactions"]
         }
         return make_response(jsonify(user_data), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+
+# endpoint to get the balance of a user
+@app.route('/balance', methods=['GET'])
+def get_balance():
+    try: 
+        userID = get_userID_from_jwt()
+    except Exception as e:
+        return make_response(jsonify({"error": "Error decoding token"}), 401)
+    try:
+        user = db_user.collection.find_one({"userID": userID})
+        if user is None:
+            return make_response(jsonify({"error": "User not found"}), 404)
+        return make_response(jsonify({"balance": user["balance"]}), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
 
@@ -147,19 +165,19 @@ def get_transactions():
 @app.route('/refund', methods=['POST'])
 def refund():
     data = request.json
-    username = data.get("username")
+    userID = data.get("userID")
     amount = data.get("amount")
     try:
-        user = db_user.collection.find_one({"username": username})
+        user = db_user.collection.find_one({"userID": userID})
         if user is None:
             return make_response(jsonify({"error": "User not found"}), 404)
-        db_user.collection.update_one({"username": username}, {"$inc": {"balance": amount}})
+        db_user.collection.update_one({"userID": userID}, {"$inc": {"balance": amount}})
         transaction = {
             "amount": amount,
             "type": "refund",
             "timestamp": datetime.now()
         }
-        db_user.collection.update_one({"username": username}, {"$push": {"transactions": transaction}})
+        db_user.collection.update_one({"userID": userID}, {"$push": {"transactions": transaction}})
         return make_response(jsonify({"message": "Refund successful"}), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
@@ -168,11 +186,8 @@ def refund():
 # TODO: deve essere usabile solo dall'endpoint gatcha/roll e alla fine di un asta
 @app.route('/add_gatcha', methods=['POST'])
 def add_gatcha():
-    try: 
-        userID = get_userID_from_jwt()
-    except Exception as e:
-        return make_response(jsonify({"error": "Error decoding token"}), 401)
     data = request.json
+    userID = data.get("userID")
     gatcha = data.get("gatcha_ID")
     try:
         user = db_user.collection.find_one({"userID": userID})
@@ -186,11 +201,8 @@ def add_gatcha():
 # Endpoint per eliminare un gatcha dalla collezione di un utente
 @app.route('/remove_gatcha', methods=['POST'])
 def remove_gatcha():
-    try: 
-        userID = get_userID_from_jwt()
-    except Exception as e:
-        return make_response(jsonify({"error": "Error decoding token"}), 401)
     data = request.json
+    userID = data.get("userID")
     gatcha = data.get("gatcha_ID")
     try:
         user = db_user.collection.find_one({"userID": userID})
@@ -199,9 +211,12 @@ def remove_gatcha():
         if gatcha not in user["collection"]:
             return make_response(jsonify({"error": "Gatcha not found in collection"}), 404)
         db_user.collection.update_one(
+            {"userID": userID, "collection": gatcha},
+            {"$set": {"collection.$": None}}
+        )
+        db_user.collection.update_one(
             {"userID": userID},
-            {"$pull": {"collection": gatcha}},
-            {"multi": False}  # This ensures only one instance is removed
+            {"$pull": {"collection": None}}
         )
         return make_response(jsonify({"message": "Gatcha removed successfully"}), 200)
     except Exception as e:

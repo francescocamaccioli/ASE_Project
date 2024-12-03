@@ -279,19 +279,31 @@ def introspect_endpoint():
 # In-memory storage for revoked tokens
 revoked_tokens = set()
 
-# questa è la logout praticamente
 @app.route('/tokens/revoke', methods=['POST'])
 def revoke_token():
     auth_header = request.headers.get('Authorization')
+    identity_header = request.headers.get('Identity')
+
     if not auth_header or not auth_header.startswith("Bearer "):
         return jsonify({"error": "Unauthorized. Your request doesn't contain an authorization header."}), 401
 
-    token = auth_header.split(" ")[1]
+    if not identity_header or not identity_header.startswith("Bearer "):
+        return jsonify({"error": "Unauthorized. Your request doesn't contain an identity header."}), 401
+
+    auth_token = auth_header.split(" ")[1]
+    identity_token = identity_header.split(" ")[1]
+
     try:
-        claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        token_id = claims["jti"]
-        revoke(token_id)
-        return jsonify({"message": "Token revoked successfully"}), 200
+        auth_claims = jwt.decode(auth_token, JWT_SECRET, algorithms=["HS256"])
+        identity_claims = jwt.decode(identity_token, JWT_SECRET, algorithms=["HS256"])
+
+        auth_token_id = auth_claims["jti"]
+        identity_token_id = identity_claims["jti"]
+
+        revoke(auth_token_id)
+        revoke(identity_token_id)
+
+        return jsonify({"message": "Tokens revoked successfully"}), 200
     except jwt.ExpiredSignatureError:
         return jsonify({"error": "Token expired"}), 401
     except jwt.InvalidTokenError:
@@ -301,10 +313,7 @@ def revoke(token_id):
     revoked_tokens.add(token_id)
 
 def is_token_revoked(token_id):
-    if token_id in revoked_tokens:
-        return True
-    else:
-        return False
+    return token_id in revoked_tokens
 
 
 # endregion ROUTES DEFINITIONS

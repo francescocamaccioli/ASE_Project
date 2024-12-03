@@ -2,7 +2,6 @@
 # serve per evitare di ripetere le stesse variabili in più servizi, senza dover fare copia-incolla
 x-common-environment:
   &common-env
-  JWT_SECRET: supersecret # only for development, in production we would use a secure secret and a secret manager
   GATCHA_URL: http://gatcha:5000
   USER_URL: http://user:5000
   MARKET_URL: http://market:5000
@@ -45,6 +44,7 @@ services:
       <<: *common-env
       AUTH_DB_URL: auth-db:27017
       AUTH_DB_NAME: auth_db
+      JWT_SECRET: supersecret # TODO: usare i segreti di docker come visto in lab?
 
   auth-db:
     image: mongo:latest
@@ -85,6 +85,16 @@ services:
       - db-market
     environment:
       <<: *common-env
+
+
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
 
   # MongoDB for gatcha (Database per il servizio Gatcha)
   db-gatcha:
@@ -141,5 +151,6 @@ volumes:
   dbdata-auth: # Volume per db-auth
   dbdata-market:
   minio-volume:  # Volume per i bucker MinIO
+  redis-data:
 
 # TODO: mettere su docker network separate tipo come avevo fatto nel disegno, però potrebbe volerci il bridge invece che dover mettere il gateway su due network allo stesso tempo

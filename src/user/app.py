@@ -3,7 +3,7 @@ from flask import Flask, request, make_response, jsonify
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 import requests
-from auth_utils import decode_token, role_required, get_userID_from_jwt
+from auth_utils import role_required, get_userID_from_jwt
 from datetime import datetime
 
 app = Flask(__name__)

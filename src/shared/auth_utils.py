@@ -1,7 +1,7 @@
-import jwt
 from flask import request, jsonify
 from functools import wraps
 from os import getenv
+import requests
 
 # SHARED FILE
 # This file contains utility functions for decentralized authentication and authorization
@@ -10,73 +10,46 @@ from os import getenv
 # ATTENZIONE: OGNI VOLTA CHE SI MODIFICA, LA NUOVA VERSIONE VA COPIATA IN TUTTI I MICROSERVIZI
 # per farlo, usare il file /shared/sync.py
 
+ADMIN_GATEWAY_URL = getenv("ADMIN_GATEWAY_URL")
 
-JWT_SECRET = getenv("JWT_SECRET")
+def introspect_token(token):
+    """Introspect the token using the /auth/introspect endpoint."""
+    response = requests.post(f"{ADMIN_GATEWAY_URL}/auth/introspect", data={"token": token})
+    if response.status_code == 200:
+        return response.json(), None
+    return None, response.json().get("error", "Unknown error")
 
-if not JWT_SECRET or JWT_SECRET.strip() == "":
-    raise ValueError("JWT_SECRET environment variable is not set or is empty")
+def role_required(*required_roles):
+    """Decorator to check if the user has the required roles."""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            auth_header = request.headers.get('Authorization')
+            if not auth_header or not auth_header.startswith("Bearer "):
+                return jsonify({"error": "Missing or invalid authorization header"}), 401
+            
+            token = auth_header.split(" ")[1]
+            claims, error = introspect_token(token)
+            if error:
+                return jsonify({"error": error}), 401
+            
+            user_role = claims.get("role", [])
+            if not any(role in required_roles for role in user_role):
+                return jsonify({"error": "Forbidden"}), 403
+            
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
-
-
-# utility function, used only inside this file
-# usage: token_payload, error = decode_token()
-def decode_token():
-    """Extract and decode the token from the Authorization header."""
+def get_userID_from_jwt():
+    """Extract user ID from JWT token."""
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith("Bearer "):
         return None, "Missing or invalid authorization header"
     
-    token = auth_header.split(" ")[1]  # Get the token part
-    
-    try:
-        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        return payload, None
-    except jwt.ExpiredSignatureError:
-        return None, "Token expired"
-    except jwt.InvalidTokenError:
-        return None, "Invalid token"
-
-
-
-
-def role_required(*required_roles):
-    """Decorator to enforce role-based authorization:
-    If the JWT you sent doesn't contain one of the required_roles, you won't be authorized to continue.
-    """
-    def decorator(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            token_payload, error = decode_token()
-            if error:
-                return jsonify({'error': error}), 401
-
-            # Check the role in the JWT payload
-            user_role = token_payload.get("role", "")
-            if user_role not in required_roles:
-                if len(required_roles) == 1:
-                    return jsonify({'error': f'Unauthorized: requires the role {required_roles[0]}'}), 403
-                else:
-                    roles_str = " or ".join(required_roles)
-                    return jsonify({'error': f'Unauthorized: requires one of the roles {roles_str}'}), 403
-
-            # Call the original function
-            return func(*args, **kwargs)
-        return wrapper
-    return decorator
-
-
-
-def get_userID_from_jwt():
-    """
-    Returns the userID from the JWT payload (reading the "sub" field).
-    This userID should be guaranteed to be authenticated by the JWT.
-    """
-    token_payload, error = decode_token()
+    token = auth_header.split(" ")[1]
+    claims, error = introspect_token(token)
     if error:
-        raise ValueError(f"Error decoding token: {error}")
+        return None, error
     
-    # get the userID from the JWT, and return it
-    userID = token_payload.get("sub", "")
-    if not userID:
-        raise ValueError('userID not found in token')
-    return userID
+    return claims.get("user_id"), None

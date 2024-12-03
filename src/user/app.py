@@ -189,7 +189,6 @@ def refund():
         return make_response(jsonify({"error": str(e)}), 500)
 
 # Endpoint per aggiungere un gatcha alla collezione di un utente
-# TODO: deve essere usabile solo dall'endpoint gatcha/roll e alla fine di un asta
 @app.route('/add_gatcha', methods=['POST'])
 def add_gatcha():
     data = request.json
@@ -275,7 +274,6 @@ def check_connection():
         return make_response(jsonify({"error": "Failed to connect to db-gatcha"}), 500)
 
 
-# TODO: usare nome RESTful tipo /users/
 # Endpoint per recuperare tutti i log (da un database gatcha)
 @app.route('/getAll', methods=['GET'])
 def get_all_logs():

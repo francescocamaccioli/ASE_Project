@@ -46,8 +46,8 @@ def role_required(*required_roles):
             try:
                 claims = introspect_token(token)
             except Exception as e:
-                logger.error("Error while gettint the claims from the token: " + str(e))
-                return jsonify({"error": e}), 401
+                logger.error("Error while getting the claims from the token: " + str(e))
+                return jsonify({"error": str(e)}), 401
             
             try:
                 user_role = claims.get("role")

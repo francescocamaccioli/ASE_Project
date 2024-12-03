@@ -46,7 +46,8 @@ test_admin_user = {
 
 # Insert the test user into the database
 try:
-    auth_db.users.insert_one(test_admin_user)
+    if not auth_db.users.find_one({"username": test_admin_user["username"]}):
+        auth_db.users.insert_one(test_admin_user)
 except ServerSelectionTimeoutError:
     print("Could not connect to MongoDB server.")
 
@@ -164,6 +165,7 @@ def token_endpoint():
         )
 
         return jsonify({
+            "userID": user["userID"],
             "access_token": access_token,
             "id_token": id_token,
             "token_type": "Bearer"

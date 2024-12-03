@@ -307,7 +307,9 @@ def roll_gatcha():
         if response.status_code != 200:
             return make_response(jsonify({"error": "Failed to add gatcha", "details": response.text}), response.status_code)
         
-        return make_response(json_util.dumps({"message": "Gatcha rolled successfully", "gatcha": gatcha}), 200)
+        response = make_response(json_util.dumps({"message": "Gatcha rolled successfully", "gatcha": gatcha}), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
     except Exception as e:
         return make_response(str(e), 500)
     

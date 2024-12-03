@@ -34,23 +34,30 @@ def init_user():
     try:
         payload = request.json  # Ottieni i dati JSON dal corpo della richiesta 
         if payload is None:
+            logger.debug("No data provided in request")
             return make_response(jsonify({"error": "No data provided"}), 400)
         
-        if "userID" not in payload:
+        logger.debug("Received payload: " + str(payload))
+        userID = payload.get("userID")
+        if not userID:
+            logger.debug("No userID provided in payload")
             return make_response(jsonify({"error": "No userID provided"}), 400)
         
-        if userExists(payload.get("userID")):
+        if userExists(userID):
+            logger.debug(f"User with userID {userID} already exists")
             return make_response(jsonify({"error": "User already exists"}), 400)
-
+        
         user = {
-            "userID": payload.get("userID"),
+            "userID": userID,
             "balance": 0,
             "collection": [],
             "transactions": []
         }
         db_user.collection.insert_one(user)
+        logger.debug(f"User with userID {userID} initialized successfully")
         return make_response(jsonify({"message": "User initialized successfully"}), 201)
     except Exception as e:
+        logger.error(f"Error initializing user: {str(e)}")
         return make_response(jsonify({"error": str(e)}), 502)
     
 @app.route('/delete_user', methods=['POST'])
@@ -82,15 +89,26 @@ def get_user_by_id(userID):
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
 
-# endpoint to increase the balance of a user
-@app.route('/increase_balance', methods=['POST'])
-def increase_balance():
+# endpoint to get the balance of a user
+@app.route('/balance', methods=['GET'])
+def get_balance():
     try: 
         userID = get_userID_from_jwt()
     except Exception as e:
-        logger.warning("Error increasing balance: " + str(e))
         return make_response(jsonify({"error": "Error decoding token"}), 401)
+    try:
+        user = db_user.collection.find_one({"userID": userID})
+        if user is None:
+            return make_response(jsonify({"error": "User not found"}), 404)
+        return make_response(jsonify({"balance": user["balance"]}), 200)
+    except Exception as e:
+        return make_response(jsonify({"error": str(e)}), 500)
+
+# endpoint to increase the balance of a user
+@app.route('/increase_balance', methods=['POST'])
+def increase_balance():
     data = request.json
+    userID = data.get("userID")
     amount = data.get("amount")
     try:
         logger.debug("Searching for user with userID: " + str(userID))
@@ -113,11 +131,8 @@ def increase_balance():
 # must be usable only by roll and after an auction win
 @app.route('/decrease_balance', methods=['POST'])
 def decrease_balance():  
-    try: 
-        userID = get_userID_from_jwt()
-    except Exception as e:
-        return make_response(jsonify({"error": "Error decoding token"}), 401)
     data = request.json
+    userID = data.get("userID")
     amount = data.get("amount")
     try:
         user = db_user.collection.find_one({"userID": userID})
@@ -156,19 +171,19 @@ def get_transactions():
 @app.route('/refund', methods=['POST'])
 def refund():
     data = request.json
-    username = data.get("username")
+    userID = data.get("userID")
     amount = data.get("amount")
     try:
-        user = db_user.collection.find_one({"username": username})
+        user = db_user.collection.find_one({"userID": userID})
         if user is None:
             return make_response(jsonify({"error": "User not found"}), 404)
-        db_user.collection.update_one({"username": username}, {"$inc": {"balance": amount}})
+        db_user.collection.update_one({"userID": userID}, {"$inc": {"balance": amount}})
         transaction = {
             "amount": amount,
             "type": "refund",
             "timestamp": datetime.now()
         }
-        db_user.collection.update_one({"username": username}, {"$push": {"transactions": transaction}})
+        db_user.collection.update_one({"userID": userID}, {"$push": {"transactions": transaction}})
         return make_response(jsonify({"message": "Refund successful"}), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
@@ -177,11 +192,8 @@ def refund():
 # TODO: deve essere usabile solo dall'endpoint gatcha/roll e alla fine di un asta
 @app.route('/add_gatcha', methods=['POST'])
 def add_gatcha():
-    try: 
-        userID = get_userID_from_jwt()
-    except Exception as e:
-        return make_response(jsonify({"error": "Error decoding token"}), 401)
     data = request.json
+    userID = data.get("userID")
     gatcha = data.get("gatcha_ID")
     try:
         user = db_user.collection.find_one({"userID": userID})
@@ -195,11 +207,8 @@ def add_gatcha():
 # Endpoint per eliminare un gatcha dalla collezione di un utente
 @app.route('/remove_gatcha', methods=['POST'])
 def remove_gatcha():
-    try: 
-        userID = get_userID_from_jwt()
-    except Exception as e:
-        return make_response(jsonify({"error": "Error decoding token"}), 401)
     data = request.json
+    userID = data.get("userID")
     gatcha = data.get("gatcha_ID")
     try:
         user = db_user.collection.find_one({"userID": userID})
@@ -208,9 +217,12 @@ def remove_gatcha():
         if gatcha not in user["collection"]:
             return make_response(jsonify({"error": "Gatcha not found in collection"}), 404)
         db_user.collection.update_one(
+            {"userID": userID, "collection": gatcha},
+            {"$set": {"collection.$": None}}
+        )
+        db_user.collection.update_one(
             {"userID": userID},
-            {"$pull": {"collection": gatcha}},
-            {"multi": False}  # This ensures only one instance is removed
+            {"$pull": {"collection": None}}
         )
         return make_response(jsonify({"message": "Gatcha removed successfully"}), 200)
     except Exception as e:

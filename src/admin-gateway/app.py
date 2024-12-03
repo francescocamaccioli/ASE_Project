@@ -22,12 +22,6 @@ SERVICE_URLS = {
     'dbm': os.getenv('DBM_URL'),
 }
 
-# ACCESS CONTROL ---------------------------------------------------------------
-
-# TODO: add JWT authentication etc
-
-# END OF ACCESS CONTROL --------------------------------------------------------
-
 def forward_request(service_name: str, subpath: str) -> Response:
     """
     Forwards the incoming request to the specified service with the given subpath.

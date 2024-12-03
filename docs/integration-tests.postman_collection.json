@@ -4,12 +4,73 @@
 		"name": "integration-tests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "26720283",
-		"_collection_link": "https://blue-station-831864.postman.co/workspace/9f0fd141-4312-4348-9e57-9e529572e41c/collection/26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3?action=share&source=collection_link&creator=26720283"
+		"_collection_link": "https://web.postman.co/workspace/ASE-project-ladygatcha~9f0fd141-4312-4348-9e57-9e529572e41c/collection/26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3?action=share&source=collection_link&creator=26720283"
 	},
 	"item": [
 		{
 			"name": "admin-gateway",
 			"item": [
+				{
+					"name": "login - adminuser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Save access token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"admin_token\", jsonData.access_token);",
+									"});",
+									"",
+									"pm.test(\"Save access token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"});",
+									"",
+									"pm.test(\"Save identity token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+									"});",
+									"",
+									"pm.test(\"Save user_id token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"user_id\", jsonData.userID);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"adminuser\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/login",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
 				{
 					"name": "/",
 					"event": [
@@ -113,6 +174,8 @@
 									"    pm.expect(pm.response.json().data.image).to.be.a('string').and.to.not.be.empty;",
 									"});",
 									"",
+									"pm.environment.set(\"imageURL\", imageURL);",
+									"",
 									"const completeImageURL = pm.environment.get(\"GATEWAY_URL\") + imageURL;",
 									"",
 									"console.log(\"You can check the content of the image at: \" + completeImageURL);",
@@ -139,6 +202,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -164,6 +237,66 @@
 							"path": [
 								"gatcha",
 								"gatchas"
+							]
+						},
+						"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+					},
+					"response": []
+				},
+				{
+					"name": "image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"",
+									"pm.test('Image content type is valid', function () {",
+									"    pm.expect(pm.response.headers.get('Content-Type')).to.include('image');",
+									"});",
+									"",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": "postman-cloud:///1efa9f59-fd03-49c0-a6cb-30fe484b839c"
+								},
+								{
+									"key": "json",
+									"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"comune\"\n}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/{{imageURL}}",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"{{imageURL}}"
 							]
 						},
 						"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
@@ -220,6 +353,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -301,6 +444,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -382,6 +535,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -463,6 +626,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
@@ -516,6 +689,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -554,6 +737,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "PUT",
 						"header": [],
 						"body": {
@@ -601,6 +794,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -611,43 +814,6 @@
 							"path": [
 								"gatcha",
 								"gatchas"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "roll a gatcha",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Response status code is 200\", function () {",
-									"    pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									"",
-									"pm.test(\"Response body structure is valid\", function () {",
-									"    var responseJSON = pm.response.json();",
-									"    pm.expect(responseJSON).to.be.an('object').that.includes.keys('_id', 'image', 'name', 'rarity', 'NTot');",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{GATEWAY_URL}}/gatcha/roll",
-							"host": [
-								"{{GATEWAY_URL}}"
-							],
-							"path": [
-								"gatcha",
-								"roll"
 							]
 						}
 					},
@@ -683,6 +849,16 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "DELETE",
 						"header": [],
 						"body": {
@@ -710,7 +886,335 @@
 			"name": "auth",
 			"item": [
 				{
-					"name": "/register",
+					"name": "logout",
+					"item": [
+						{
+							"name": "/auth/register - user_che_fa_logout",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Verify response status code is 200 or 400 and contains error message\", function () {",
+											"    pm.expect(pm.response.code).to.satisfy((code) => {",
+											"        return code === 200 || (code === 400 && pm.response.json().error === \"User already exists\");",
+											"    });",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\": \"user_che_fa_logout\",\n    \"password\": \"passwordissima\",\n    \"email\": \"user_che_fa_logout@test.org\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{GATEWAY_URL}}/auth/register",
+									"host": [
+										"{{GATEWAY_URL}}"
+									],
+									"path": [
+										"auth",
+										"register"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "/auth/login",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"",
+											"// va bene anche ",
+											"pm.test(\"Response status code is 200 or 400\", function () {",
+											"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+											"});",
+											"",
+											"pm.test(\"Save access token to variable\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.environment.set(\"token\", jsonData.access_token);",
+											"});",
+											"",
+											"pm.test(\"Save identity token to variable\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"username\": \"user_che_fa_logout\",\n    \"password\": \"passwordissima\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{GATEWAY_URL}}/auth/login",
+									"host": [
+										"{{GATEWAY_URL}}"
+									],
+									"path": [
+										"auth",
+										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "introspect auth token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status code is 200\", function () {",
+											"    pm.expect(pm.response.code).to.equal(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{GATEWAY_URL}}/auth/introspect",
+									"host": [
+										"{{GATEWAY_URL}}"
+									],
+									"path": [
+										"auth",
+										"introspect"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "intrispect ID_token",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status code is 200\", function () {",
+											"    pm.expect(pm.response.code).to.equal(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "token",
+											"value": "{{identity_token}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{GATEWAY_URL}}/auth/introspect",
+									"host": [
+										"{{GATEWAY_URL}}"
+									],
+									"path": [
+										"auth",
+										"introspect"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "revoke",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status code is 200\", function () {",
+											"    pm.expect(pm.response.code).to.equal(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}} ",
+										"type": "text"
+									},
+									{
+										"key": "Identity",
+										"value": "Bearer {{identity_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{GATEWAY_URL}}/auth/tokens/revoke",
+									"host": [
+										"{{GATEWAY_URL}}"
+									],
+									"path": [
+										"auth",
+										"tokens",
+										"revoke"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "introspect AFTER REVOKE",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status code is 401\", function () {",
+											"    pm.expect(pm.response.code).to.equal(401);",
+											"});",
+											"",
+											"",
+											"pm.test(\"The error message is 'Token revoked'\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.error).to.equal(\"Token revoked\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "token",
+											"value": "{{token}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{GATEWAY_URL}}/auth/introspect",
+									"host": [
+										"{{GATEWAY_URL}}"
+									],
+									"path": [
+										"auth",
+										"introspect"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "introspect ID_TOKEN AFTER REVOKE",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Response status code is 401\", function () {",
+											"    pm.expect(pm.response.code).to.equal(401);",
+											"});",
+											"",
+											"",
+											"pm.test(\"The error message is 'Token revoked'\", function () {",
+											"    var jsonData = pm.response.json();",
+											"    pm.expect(jsonData.error).to.equal(\"Token revoked\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "formdata",
+									"formdata": [
+										{
+											"key": "token",
+											"value": "{{identity_token}}",
+											"type": "text"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{GATEWAY_URL}}/auth/introspect",
+									"host": [
+										"{{GATEWAY_URL}}"
+									],
+									"path": [
+										"auth",
+										"introspect"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "register user1",
 					"event": [
 						{
 							"listen": "test",
@@ -753,7 +1257,7 @@
 					"response": []
 				},
 				{
-					"name": "/auth/login",
+					"name": "login user1",
 					"event": [
 						{
 							"listen": "test",
@@ -770,7 +1274,16 @@
 									"    pm.environment.set(\"token\", jsonData.access_token);",
 									"});",
 									"",
-									""
+									"",
+									"pm.test(\"Save identity token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+									"});",
+									"",
+									"pm.test(\"Save user_id token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"user_id\", jsonData.userID);",
+									"});"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -852,7 +1365,206 @@
 					"response": []
 				},
 				{
-					"name": "echousername",
+					"name": "introspect auth_token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/introspect",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"introspect"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "introspect id_token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "token",
+									"value": "{{identity_token}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/introspect",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"introspect"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "register - user2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Verify response status code is 200 or 400 and contains error message\", function () {",
+									"    pm.expect(pm.response.code).to.satisfy((code) => {",
+									"        return code === 200 || (code === 400 && pm.response.json().error === \"User already exists\");",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"user2\",\n    \"password\": \"passwordissima\",\n    \"email\": \"user2@test.org\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/register",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login - user2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// va bene anche ",
+									"pm.test(\"Response status code is 200 or 400\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"pm.test(\"Save access token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"});",
+									"",
+									"pm.test(\"Save identity token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+									"});",
+									"",
+									"pm.test(\"Save user_id token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"user_id\", jsonData.userID);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"user2\",\n    \"password\": \"passwordissima\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/login",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "normaluseronly",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"method": "GET",
 						"header": [
@@ -863,14 +1575,284 @@
 							}
 						],
 						"url": {
-							"raw": "{{GATEWAY_URL}}/auth/test/echousername",
+							"raw": "{{GATEWAY_URL}}/auth/test/normaluseronly",
 							"host": [
 								"{{GATEWAY_URL}}"
 							],
 							"path": [
 								"auth",
 								"test",
-								"echousername"
+								"normaluseronly"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "adminuseronly forbidden",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/test/adminuseronly",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"test",
+								"adminuseronly"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "adminuseronly forbidden",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/test/adminuseronly",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"test",
+								"adminuseronly"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login - adminuser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Save access token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"});",
+									"",
+									"pm.test(\"Save identity token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+									"});",
+									"",
+									"pm.test(\"Save user_id token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"user_id\", jsonData.userID);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"adminuser\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/login",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "adminuseronly permitted",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/test/adminuseronly",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"test",
+								"adminuseronly"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "bothroles permitted",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/test/bothroles",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"test",
+								"bothroles"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login - user2 again Copy",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// va bene anche ",
+									"pm.test(\"Response status code is 200 or 400\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"pm.test(\"Save access token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"});",
+									"",
+									"pm.test(\"Save identity token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+									"});",
+									"",
+									"pm.test(\"Save user_id token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"user_id\", jsonData.userID);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"user2\",\n    \"password\": \"passwordissima\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/login",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"login"
 							]
 						}
 					},
@@ -930,13 +1912,7 @@
 								"exec": [
 									"pm.test(\"Response status code is 200\", function () {",
 									"    pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									"",
-									"pm.test(\"Extract and set user_id to environment variable\", function () {",
-									"    var responseBody = pm.response.json();",
-									"    pm.environment.set(\"user_id\", responseBody[0].userID);",
-									"});",
-									""
+									"});"
 								],
 								"type": "text/javascript",
 								"packages": {}
@@ -1011,6 +1987,326 @@
 								"user",
 								"users",
 								"{{user_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "increase balance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userID\": \"{{user_id}}\",\n    \"amount\" : 500\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/increase_balance",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"increase_balance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "decrease balance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{   \n    \"userID\": \"{{user_id}}\",\n    \"amount\": 20\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/decrease_balance",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"decrease_balance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get balance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/balance",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"balance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "roll a gatcha",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test(\"Response body structure is valid\", function () {",
+									"    var responseJSON = pm.response.json();",
+									"    pm.expect(responseJSON.gatcha).to.be.an('object').that.includes.keys('_id', 'image', 'name', 'rarity', 'NTot');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/gatcha/roll",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"roll"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get collection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 when collection is retrieved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains the user's collection\", function () {",
+									"    let jsonResponse = pm.response.json();",
+									"    pm.expect(jsonResponse).to.be.an('array'); // Assuming 'collection' is an array",
+									"});",
+									"",
+									"pm.test(\"Response time is acceptable\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(1000); // Expect response under 1 second",
+									"});",
+									"",
+									"pm.test(\"Error on invalid token\", function () {",
+									"    if (pm.response.code === 401) {",
+									"        let jsonResponse = pm.response.json();",
+									"        pm.expect(jsonResponse.error).to.eql(\"Error decoding token\");",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Error on user not found\", function () {",
+									"    if (pm.response.code === 404) {",
+									"        let jsonResponse = pm.response.json();",
+									"        pm.expect(jsonResponse.error).to.eql(\"User not found\");",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Server handles unexpected errors gracefully\", function () {",
+									"    if (pm.response.code === 500) {",
+									"        let jsonResponse = pm.response.json();",
+									"        pm.expect(jsonResponse).to.have.property(\"error\");",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/collection",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get transactions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 when transactions are retrieved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains the user's transactions\", function () {",
+									"    let jsonResponse = pm.response.json();",
+									"    pm.expect(jsonResponse).to.be.an('array'); // Assuming transactions is an array",
+									"});",
+									"",
+									"pm.test(\"Error on invalid token\", function () {",
+									"    if (pm.response.code === 401) {",
+									"        let jsonResponse = pm.response.json();",
+									"        pm.expect(jsonResponse.error).to.eql(\"Error decoding token\");",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Error on user not found\", function () {",
+									"    if (pm.response.code === 404) {",
+									"        let jsonResponse = pm.response.json();",
+									"        pm.expect(jsonResponse.error).to.eql(\"User not found\");",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Server handles unexpected errors gracefully\", function () {",
+									"    if (pm.response.code === 500) {",
+									"        let jsonResponse = pm.response.json();",
+									"        pm.expect(jsonResponse).to.have.property(\"error\");",
+									"    }",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/transactions",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"transactions"
 							]
 						}
 					},
@@ -1129,6 +2425,10 @@
 	"variable": [
 		{
 			"key": "token",
+			"value": ""
+		},
+		{
+			"key": "imageURL",
 			"value": ""
 		}
 	]

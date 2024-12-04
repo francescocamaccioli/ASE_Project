@@ -23,9 +23,8 @@ TOKEN_EXPIRATION_MINUTES = 30
 
 AUTH_DB_URL = os.getenv("AUTH_DB_URL")
 AUTH_DB_NAME = os.getenv("AUTH_DB_NAME")
+USER_URL = os.getenv("USER_URL")
 JWT_SECRET = os.getenv("JWT_SECRET")
-GATEWAY_URL = os.getenv("GATEWAY_URL")
-ADMIN_GATEWAY_URL = os.getenv("ADMIN_GATEWAY_URL")
 
 
 
@@ -99,7 +98,7 @@ def register_user():
             return make_response(jsonify({"error": "Invalid email"}), 400)
         
         auth_db.users.insert_one(user)
-        response = requests.post(ADMIN_GATEWAY_URL+"/user/init-user", json={"userID": user["userID"]})
+        response = requests.post(USER_URL+"/init-user", json={"userID": user["userID"]})
         if response.status_code != 201:
             return make_response(jsonify({"error": "Could not initialize user, problem with the user microservice"}), 502)
                     
@@ -218,7 +217,7 @@ def delete_user():
         
         auth_db.users.delete_one({"userID": userID})
         # invoke the user microservice to delete the user
-        response = requests.post(ADMIN_GATEWAY_URL+"/user/delete_user", json={"userID": userID})
+        response = requests.post(USER_URL+"/delete_user", json={"userID": userID})
         if response.status_code != 200:
             return make_response(jsonify({"error": "Could not delete user, problem with the user microservice "+ response.text}), 502)
         
@@ -264,17 +263,28 @@ Process :
 """
 @app.route('/introspect', methods=['POST'])
 def introspect_endpoint():
-    token = request.form.get("token")
+    try:
+        token = request.form.get("token")
+        if not token:
+            app.logger.error("Missing token in request")
+            return jsonify({"error": "Missing token"}), 400
+    except Exception as e:
+        app.logger.error(f"Error retrieving token from request: {str(e)}")
+        return jsonify({"error": "Missing token"}), 400
 
     try:
         claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         if is_token_revoked(claims["jti"]):
+            app.logger.info(f"Token revoked: {claims['jti']}")
             return jsonify({"active": False, "error": "Token revoked"}), 401
+        app.logger.info(f"Token introspected successfully: {claims['jti']}")
         return jsonify(claims)
     except jwt.ExpiredSignatureError:
+        app.logger.warning("Token expired")
         return jsonify({"active": False, "error": "Token expired"}), 401
     except jwt.InvalidTokenError:
-        return jsonify({"active": False, "error": "Invalid token"}), 401 
+        app.logger.warning("Invalid token")
+        return jsonify({"active": False, "error": "Invalid token"}), 401
 
 
 

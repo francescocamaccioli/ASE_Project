@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 # URLS dei microservizi
 GATCHA_URL = os.getenv('GATCHA_URL')
-GATEWAY_URL = os.getenv('GATEWAY_URL')
 MARKET_URL = os.getenv('MARKET_URL')
 
 

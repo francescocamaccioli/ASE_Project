@@ -6,8 +6,6 @@ x-common-environment:
   USER_URL: http://user:5000
   MARKET_URL: http://market:5000
   AUTH_URL: http://auth:5000
-  GATEWAY_URL: http://gateway:5000
-  ADMIN_GATEWAY_URL: http://admin-gateway:5000
 
 services:
   # Gateway Service

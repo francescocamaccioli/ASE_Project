@@ -1,13 +1,17 @@
-from datetime import datetime, time, timedelta
 import os
-import threading
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.date import DateTrigger
 from flask import Flask, request, make_response, jsonify
 from pymongo import MongoClient
 import bson.json_util as json_util
 from pymongo.errors import ServerSelectionTimeoutError
 import requests
 from auth_utils import role_required, get_userID_from_jwt
+import time
+from datetime import datetime, timedelta
+import logging
 
+logging.basicConfig(level=logging.DEBUG)
 
 USER_URL = os.getenv('USER_URL')
 
@@ -15,6 +19,9 @@ client_market = MongoClient("db-market", 27017, maxPoolSize=50)
 db_market = client_market["db_market"]
 Bids = db_market["Bids"]
 Auctions = db_market["Auctions"]
+
+scheduler = BackgroundScheduler()
+scheduler.start()
 
 app = Flask(__name__)
 
@@ -30,35 +37,33 @@ def add_auction():
     
     auction = {
         "Auction_ID": Auctions.count_documents({}) + 1, # TODO: maybe add hash here (?)
-        "Gatcha_ID": data.get("GatchaID"),
+        "Gatcha_ID": data.get("Gatcha_ID"),
         "Auctioner_ID": userID,
         "Winner_ID": "",
         "starting_price": data.get("starting_price"),
         "current_price": data.get("starting_price"), # current highest bid value, to be refounded if another higher bid is placed
         "creation_time": datetime.now(),
-        "end_time": datetime.now() + timedelta(minutes=10)
+        "end_time": datetime.now() + timedelta(minutes=1)
     }
     try:
-
-        jwt_token = request.headers.get('Authorization')
-        headers = {'Authorization': jwt_token}
-        # Erase from user collection the gatcha that is being auctioned
         response = requests.post(
             USER_URL + "/remove_gatcha",
-            json={"gatcha_ID": auction["Gatcha_ID"]},headers=headers
+            json={"userID": auction["Auctioner_ID"], "gatcha_ID": auction["Gatcha_ID"]}
         )
         if response.status_code != 200:
-            return make_response(jsonify({"error": "Failed to remove gatcha from user"}), 500)
-
+            return str(response)
+        
         Auctions.insert_one(auction)
 
-
-        # Start a thread to delete the auction after the specified end_time
-        delay_seconds = (auction["end_time"] - auction["creation_time"].total_seconds())
-        thread = threading.Thread(target=delete_auction_after_delay, args=(auction["Auction_ID"], delay_seconds,auction["Gatcha_ID"]))
-        thread.daemon = True  # Ensures the thread ends if the main app stops
-        thread.start()
-
+        logging.debug(f"End time: {auction['end_time']}")
+        # adding a job to finalize the auction
+        scheduler.add_job(
+            finalize_auction,
+            trigger=DateTrigger(run_date=auction["end_time"]),
+            args=[auction["Auction_ID"], auction["Gatcha_ID"]],
+            id=f"finalize_auction_{auction['Auction_ID']}",
+            replace_existing=True
+        )
 
         return make_response(jsonify({"message": "Auction added successfully"}), 201)
     except Exception as e:
@@ -72,7 +77,7 @@ def delete_auction():
     if not auction_id:
         return make_response(jsonify({"error": "Auction_ID is required"}), 400)
     try:
-        auction = Auctions.find_one({"Auction_ID": auction_id}) ## correzione di auction_id id
+        auction = Auctions.find_one({"Auction_ID": auction_id})
         if not auction:
             return make_response(jsonify({"error": "Auction not found"}), 404)
         
@@ -82,7 +87,7 @@ def delete_auction():
             previous_bid_amount = auction["current_price"]
             response = requests.post(
                 USER_URL + "/refund",
-                json={"username": previous_winner, "amount": previous_bid_amount}
+                json={"userID": previous_winner, "amount": previous_bid_amount}
             )
             if response.status_code != 200:
                 return make_response(jsonify({"error": "Failed to refund previous winner"}), 500)
@@ -96,31 +101,51 @@ def delete_auction():
         return make_response(jsonify({"error": str(e)}), 500)
     
 
-#   Thread function to delete an auction after a delay.
-def delete_auction_after_delay(auction_id, delay_seconds,gatcha_id):
-    
-    time.sleep(delay_seconds)
+# Thread function to delete an auction after a delay.
+def finalize_auction(auction_id, gatcha_id):
     try:
-        auction = Auctions.find_one({"Auction_ID": auction_id}) ## correzione di auction_id id
+        logging.debug(f"------------------------------------------ Finalizing auction {auction_id}------------------------------------------")
+        auction = Auctions.find_one({"Auction_ID": auction_id})
         if not auction:
-            return make_response(jsonify({"error": "Auction not found"}), 404)
-        
-        if auction["Winner_ID"]:
-            winner = auction["Winner_ID"]
-            response = requests.post(
-                USER_URL + "/add_gatcha",
-                json={"username": winner, "gatcha_ID": gatcha_id}
-            )
-        if response.status_code != 200:
-                return make_response(jsonify({"error": "Failed to add gatcha to user"}), 500)
-        
+            logging.debug(f"Auction {auction_id} not found")
+            return
+
+        # Handle the winner or refund
+        if auction["Winner_ID"] != "":
+            response = requests.post(USER_URL + "/add_gatcha", json={
+                "userID": auction["Winner_ID"],
+                "gatcha_ID": gatcha_id
+            })
+            if response.status_code != 200:
+                print(f"Failed to add gatcha to winner for auction {auction_id}")
+                return
+
+            response = requests.post(USER_URL + "/increase_balance", json={
+                "userID": auction["Auctioner_ID"],
+                "amount": auction["current_price"]
+            })
+            if response.status_code != 200:
+                print(f"Failed to increase balance for auctioner {auction_id}")
+                return
+        else:
+            # Refund the gatcha to the auctioner if no bids were placed
+            response = requests.post(USER_URL + "/add_gatcha", json={
+                "userID": auction["Auctioner_ID"],
+                "gatcha_ID": gatcha_id
+            })
+            if response.status_code != 200:
+                print(f"Failed to return gatcha to auctioner for auction {auction_id}")
+                return
+
+        # Delete the auction
         result = Auctions.delete_one({"Auction_ID": auction_id})
         if result.deleted_count == 1:
-            return make_response(jsonify({"message": "Auction ended successfully"}), 200)
+            print(f"Auction {auction_id} finalized.")
         else:
-            return make_response(jsonify({"error": "Auction not found"}), 404)
+            print(f"Failed to delete auction {auction_id}")
     except Exception as e:
-        return make_response(jsonify({"error": str(e)}), 500)
+        print(f"Error finalizing auction {auction_id}: {e}")
+
 
 
 @app.route('/bid', methods=['POST'])
@@ -142,19 +167,30 @@ def bid():
         if not auction:
             return make_response(jsonify({"error": "Auction not found"}), 404)
         
-        if bid["amount"] <= auction["current_price"]:
+        if int(bid["amount"]) <= int(auction["current_price"]):
             return make_response(jsonify({"error": "Bid amount must be higher than current price"}), 400)
         
         # if the auction has a winner, his bid needs to be refounded
-        if auction["Winner_ID"]:
+        if auction["Winner_ID"] != "":
             previous_winner = auction["Winner_ID"]
             previous_bid_amount = auction["current_price"]
             response = requests.post(
                 USER_URL + "/refund",
-                json={"username": previous_winner, "amount": previous_bid_amount}
+                json={"userID": previous_winner, "amount": previous_bid_amount}
             )
             if response.status_code != 200:
                 return make_response(jsonify({"error": "Failed to refund previous winner"}), 500)
+        
+        jwt_token = request.headers.get('Authorization')
+        headers = {'Authorization': jwt_token}
+        # decrease the bidder's balance
+        response = requests.post(
+            USER_URL + "/decrease_balance",
+            json={"userID": userID, "amount": bid["amount"]},
+            headers=headers
+        )
+        if response.status_code != 200:
+            return make_response(jsonify({"error": "Failed to decrease balance to bidder"}), 500)
         
         Auctions.update_one(
             {"Auction_ID": bid["Auction_ID"]},
@@ -183,7 +219,9 @@ def get_auction():
 def get_all_auctions():
     try:
         auctions = list(Auctions.find({}))
-        return make_response(json_util.dumps(auctions), 200)
+        response = make_response(json_util.dumps(auctions), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
     except ServerSelectionTimeoutError:
         return make_response(jsonify({"error": "Could not connect to MongoDB server."}), 500)
 

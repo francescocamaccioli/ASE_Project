@@ -21,10 +21,3 @@ Advanced Software Engineering 24/25 Course Project
 
 Contains:
 - architecture.yml: the architecture diagram exported from MicroFreshner, can be imported into the web app to view the architecture
-
-TODO:
-- pdf report
-- openapi
-- export postman collection
-- locust file
-- copy of github actions workflow

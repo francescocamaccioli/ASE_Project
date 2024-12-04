@@ -5,6 +5,7 @@ import requests
 from flask import Flask, request, jsonify, Response
 from requests.exceptions import ConnectionError, HTTPError, RequestException
 from werkzeug.exceptions import BadRequest, MethodNotAllowed
+from auth_utils import *
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -20,12 +21,6 @@ SERVICE_URLS = {
     'market': os.getenv('MARKET_URL'),
     'dbm': os.getenv('DBM_URL'),
 }
-
-# ACCESS CONTROL ---------------------------------------------------------------
-
-# TODO: add JWT authentication etc
-
-# END OF ACCESS CONTROL --------------------------------------------------------
 
 def forward_request(service_name: str, subpath: str) -> Response:
     """
@@ -102,6 +97,7 @@ def internal_error(error):
 
 # ROUTES -----------------------------------------------------------------------
 @app.route('/<service>/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'])
+@role_required('adminUser')
 def gateway_handler(service, subpath):
     """
     General gateway handler to route requests to appropriate services and subpaths.

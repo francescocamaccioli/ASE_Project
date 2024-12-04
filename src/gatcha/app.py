@@ -145,10 +145,8 @@ def weighted_random_choice(rarities):
 
 
 # Endpoint per aggiungere dati nel database gacha_db
-# TODO: aggiungere input validation per controllare che la richiesta sia come ce lo aspettiamo
-# TODO: può farla solo admin
-# TODO: c'è un test già scritto, spostarlo in integration tests
 @app.route('/gatchas', methods=['POST'])
+@role_required('adminUser')
 def add_gatcha_data():
     """
     Admins can use this endpoint to add a new gatcha to the database.
@@ -215,13 +213,13 @@ def add_gatcha_data():
         db[GATCHA_COLLECTION_NAME].insert_one(data)
         
         response = make_response(json_util.dumps({"message": "Data with image added to gatcha_db", "data": data}), 200)
-        response.headers['Content-Type'] = 'application/json' # TODO: dovremmo fare così per tutti i response in JSON? agli altri manca
+        response.headers['Content-Type'] = 'application/json'
         return response
     except Exception as e:
         return make_response(json_util.dumps({"error": f"Database insert failed: {str(e)}"}), 500)
 
 
-
+@role_required('adminUser')
 @app.route('/gatchas/<gatcha_id>', methods=['DELETE'])
 def delete_gatcha(gatcha_id):
     """
@@ -307,14 +305,16 @@ def roll_gatcha():
         if response.status_code != 200:
             return make_response(jsonify({"error": "Failed to add gatcha", "details": response.text}), response.status_code)
         
-        return make_response(json_util.dumps({"message": "Gatcha rolled successfully", "gatcha": gatcha}), 200)
+        response = make_response(json_util.dumps({"message": "Gatcha rolled successfully", "gatcha": gatcha}), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
     except Exception as e:
         return make_response(str(e), 500)
     
 
 
-
 @app.route('/gatchas', methods=['GET'])
+@role_required('adminUser', 'normalUser')
 def get_all_gatcha():
     """
     Endpoint to get all the existing gatcha characters.
@@ -332,8 +332,8 @@ def get_all_gatcha():
         return make_response(str(e), 500)
 
 
-
 @app.route('/gatchas/<gatcha_id>', methods=['GET'])
+@role_required('adminUser', 'normalUser')
 def get_gatcha(gatcha_id):
     """
     Endpoint to get a specific gatcha character by ID.
@@ -356,7 +356,7 @@ def get_gatcha(gatcha_id):
 
 
 @app.route('/gatchas/<gatcha_id>', methods=['PUT'])
-# TODO: @auth_utils.role_required("adminUser")
+@role_required("adminUser")
 def update_gatcha(gatcha_id):
     """
     Endpoint to update the information of a specific gatcha character by ID.

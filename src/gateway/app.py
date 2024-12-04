@@ -16,8 +16,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Regex per validare service_name e subpath
-VALID_SERVICE_REGEX = r'^[a-zA-Z0-9_-]+$'  # Consente solo lettere, numeri, underscore, trattino
-VALID_SUBPATH_REGEX = r'^[a-zA-Z0-9/_-]+$'  # Consente anche "/" nei subpath
+VALID_SERVICE_REGEX = r'^[a-zA-Z0-9._-]+$'
+VALID_SUBPATH_REGEX = r'^[a-zA-Z0-9._/-]+$'
+  
+  
 # Service URLs from environment variables with default values
 SERVICE_URLS = {
     'user': os.getenv('USER_URL'),

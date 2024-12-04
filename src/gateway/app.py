@@ -2,6 +2,8 @@ import os
 import logging
 from typing import Optional, Dict, Any
 import requests
+import re
+import bleach
 from flask import Flask, request, jsonify, Response
 from requests.exceptions import ConnectionError, HTTPError, RequestException
 from werkzeug.exceptions import BadRequest, MethodNotAllowed
@@ -13,6 +15,9 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Regex per validare service_name e subpath
+VALID_SERVICE_REGEX = r'^[a-zA-Z0-9_-]+$'  # Consente solo lettere, numeri, underscore, trattino
+VALID_SUBPATH_REGEX = r'^[a-zA-Z0-9/_-]+$'  # Consente anche "/" nei subpath
 # Service URLs from environment variables with default values
 SERVICE_URLS = {
     'user': os.getenv('USER_URL'),
@@ -36,32 +41,43 @@ def forward_request(service_name: str, subpath: str) -> Response:
     Returns:
         Response: The response object from the target service.
     """
+    
+   # Validazione del nome del servizio
+    if not validate_input(service_name, VALID_SERVICE_REGEX):
+        logger.warning(f"Invalid service name: {service_name}")
+        return jsonify({'error': 'Invalid service name'}), 400
+
+    # Recupera l'URL di base del servizio
     base_url = SERVICE_URLS.get(service_name)
     if not base_url:
         logger.warning(f"Unknown service: {service_name}")
         return jsonify({'error': 'Service not found'}), 404
 
-    # Construct the target URL
+    # Validazione del subpath
+    if not validate_input(subpath, VALID_SUBPATH_REGEX):
+        logger.warning(f"Invalid subpath: {subpath}")
+        return jsonify({'error': 'Invalid subpath'}), 400
+
+    # Costruisci l'URL target senza i parametri della query string
     target_url = f"{base_url}/{subpath}"
-    logger.info(f"Forwarding {request.method} request to {target_url}")
+    logger.info(f"Forwarding {request.method} request to {target_url} without query parameters")
 
     try:
-        # Prepare the headers, excluding host to avoid conflicts
+        # Prepara gli header (escludendo 'host' per evitare conflitti)
         headers = {key: value for key, value in request.headers if key.lower() != 'host'}
 
-        # Forward the request based on its method
+        # Inoltra la richiesta senza parametri della query string
         response = requests.request(
             method=request.method,
-            url=target_url,
-            params=request.args,
+            url=target_url,  # Usa solo il target URL senza parametri
             data=request.get_data(),
             headers=headers,
             cookies=request.cookies,
             allow_redirects=False,
-            timeout=10  # you can adjust the timeout as needed
+            timeout=10  # Timeout personalizzabile
         )
 
-        # Prepare the response to return to the client
+        # Rimuovi header non necessari nella risposta
         excluded_headers = ['content-encoding', 'transfer-encoding', 'connection']
         headers = [(name, value) for name, value in response.raw.headers.items()
                    if name.lower() not in excluded_headers]
@@ -112,5 +128,48 @@ def index():
     """Health check route."""
     return jsonify({"message": "API Gateway is running"}), 200
 
-# END OF ROUTES ----------------------------------------------------------------
+# INPUT SANIFICATION ----------------------------------------------------------------
 
+def sanitize_input(data: str) -> str:
+    """
+    Sanitizes input string by removing potentially dangerous characters.
+    This helps prevent injection attacks.
+    Args:
+        data (str): Input string to sanitize.
+    Returns:
+        str: Sanitized string.
+    """
+    # Sanitize using bleach, only allowing safe HTML tags if needed
+    return bleach.clean(data, tags=[], attributes=[], strip=False, protocols=['http', 'https'])
+
+def validate_input(input_value: str, regex: str) -> bool:
+    """
+    Validates input using a regex pattern.
+
+    Args:
+        input_value (str): The input string to validate.
+        regex (str): The regex pattern to validate against.
+
+    Returns:
+        bool: True if the input matches the regex, False otherwise.
+    """
+    return re.match(regex, input_value) is not None
+
+def sanitize_query_params(params):
+    """
+    Sanitize query string parameters to ensure no unsafe characters are present.
+
+    Args:
+        params (MultiDict): The query parameters to sanitize.
+
+    Returns:
+        dict: The sanitized query parameters.
+    """
+    sanitized_params = {}
+    for key, value in params.items():
+        if validate_input(key, VALID_QUERY_PARAM_REGEX) and validate_input(value, VALID_QUERY_PARAM_REGEX):
+            sanitized_params[key] = value
+        else:
+            logger.warning(f"Unsafe query parameter detected: {key}={value}")
+            sanitized_params[key] = None  # Or you can exclude it entirely, depending on the use case
+    return sanitized_params

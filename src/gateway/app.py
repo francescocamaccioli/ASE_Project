@@ -30,11 +30,102 @@ SERVICE_URLS = {
 }
 
 # WHITELIST of allowed endpoints
+# TODO: togliere quelli non consentiti
 WHITELIST = [
+    # minio storage microservice
     {
-        'service': 'market',
+        'service': 'storage',
+        'method': 'GET',
+        'path': 'gachabucket/images/<file_name>'
+    },
+    
+    # auth microservice
+    {
+        'service': 'auth',
         'method': 'POST',
-        'path': 'add-auction'
+        'path': 'register'
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'debug/users'
+    },
+    {
+        'service': 'auth',
+        'method': 'POST',
+        'path': 'login'
+    },
+    {
+        'service': 'auth',
+        'method': 'POST',
+        'path': 'editinfo'
+    },
+    {
+        'service': 'auth',
+        'method': 'POST',
+        'path': 'delete_user'
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'userinfo'
+    },
+    {
+        'service': 'auth',
+        'method': 'POST',
+        'path': 'introspect'
+    },
+    {
+        'service': 'auth',
+        'method': 'POST',
+        'path': 'tokens/revoke'
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'test'
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'test/normaluseronly'
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'test/adminuseronly'
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'test/bothroles'
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'userid'
+    },
+
+    # gatcha microservice
+    {
+        'service': 'gatcha',
+        'method': 'POST',
+        'path': 'gatchas'
+    },
+    {
+        'service': 'gatcha',
+        'method': 'DELETE',
+        'path': 'gatchas/<gatcha_id>'
+    },
+    {
+        'service': 'gatcha',
+        'method': 'GET',
+        'path': 'roll'
+    },
+    {
+        'service': 'gatcha',
+        'method': 'GET',
+        'path': 'gatchas'
     },
     {
         'service': 'gatcha',
@@ -42,11 +133,114 @@ WHITELIST = [
         'path': 'gatchas/<gatcha_id>'
     },
     {
-        'service': 'storage',
-        'method': 'GET',
-        'path': 'storage/gachabucket/images/<file_name>'
+        'service': 'gatcha',
+        'method': 'PUT',
+        'path': 'gatchas/<gatcha_id>'
     },
-    # TODO: Add more allowed endpoints here
+
+    # market microservice
+    {
+        'service': 'market',
+        'method': 'POST',
+        'path': 'add-auction'
+    },
+    {
+        'service': 'market',
+        'method': 'DELETE',
+        'path': 'delete-auction'
+    },
+    {
+        'service': 'market',
+        'method': 'POST',
+        'path': 'bid'
+    },
+    {
+        'service': 'market',
+        'method': 'GET',
+        'path': 'auction'
+    },
+    {
+        'service': 'market',
+        'method': 'GET',
+        'path': 'auctions'
+    },
+    {
+        'service': 'market',
+        'method': 'GET',
+        'path': 'checkconnection'
+    },
+
+    # user microservice
+    {
+        'service': 'user',
+        'method': 'POST',
+        'path': 'init-user'
+    },
+    {
+        'service': 'user',
+        'method': 'POST',
+        'path': 'delete_user'
+    },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'users/<userID>'
+    },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'balance'
+    },
+    {
+        'service': 'user',
+        'method': 'POST',
+        'path': 'increase_balance'
+    },
+    {
+        'service': 'user',
+        'method': 'POST',
+        'path': 'decrease_balance'
+    },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'transactions'
+    },
+    {
+        'service': 'user',
+        'method': 'POST',
+        'path': 'refund'
+    },
+    {
+        'service': 'user',
+        'method': 'POST',
+        'path': 'add_gatcha'
+    },
+    {
+        'service': 'user',
+        'method': 'POST',
+        'path': 'remove_gatcha'
+    },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'collection'
+    },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'collection/<gatcha_ID>'
+    },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'checkconnection'
+    },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'getAll'
+    }
 ]
 
 def is_request_allowed(service_name: str, method: str, subpath: str) -> bool:

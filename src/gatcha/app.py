@@ -24,6 +24,8 @@ install(show_locals=True)
 
 # region initializing vars ----------------------------------------
 
+USERL_URL = os.getenv('USER_URL')
+
 ROLL_PRICE = 10
 
 RARITY_PROBABILITIES = {

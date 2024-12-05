@@ -1,6 +1,6 @@
 import os
 import logging
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 import requests
 import re
 import bleach
@@ -18,68 +18,327 @@ logger = logging.getLogger(__name__)
 # Regex per validare service_name e subpath
 VALID_SERVICE_REGEX = r'^[a-zA-Z0-9._-]+$'
 VALID_SUBPATH_REGEX = r'^[a-zA-Z0-9._/-]+$'
-  
-  
+
 # Service URLs from environment variables with default values
 SERVICE_URLS = {
     'user': os.getenv('USER_URL'),
     'gatcha': os.getenv('GATCHA_URL'),
     'market': os.getenv('MARKET_URL'),
-    'dbm': os.getenv('DBM_URL'),
     'storage': os.getenv('MINIO_STORAGE_URL'),
     'auth': os.getenv('AUTH_URL')
 }
 
-# TODO: aggiungere una WHITELIST con gli endpoint che possono essere chiamati da questo gateway (default deny). questo perché questo endpoint è pubblico. dobbiamo evitare che possa chiamare endpoint sensibili riservati agli admin.
+# WHITELIST of allowed endpoints
+# if an endpoint is commented out or not present in the whitelist, it will be blocked
+# remember to add comments to explain why an endpoint is allowed or not allowed
+WHITELIST = [
+    # minio storage microservice
+    {
+        'service': 'storage',
+        'method': 'GET',
+        'path': 'gachabucket/images/<file_name>' # accessibile anche a normalUser
+    },
+    
+    # auth microservice
+    {
+        'service': 'auth',
+        'method': 'POST',
+        'path': 'register' # accessibile anche a normalUser
+    },
+    # {
+    #     'service': 'auth',
+    #     'method': 'GET',
+    #     'path': 'debug/users' # accessibile solo a admin
+    # },
+    {
+        'service': 'auth',
+        'method': 'POST',
+        'path': 'login'
+    },
+    {
+        'service': 'auth',
+        'method': 'POST',
+        'path': 'editinfo'
+    },
+    {
+        'service': 'auth',
+        'method': 'POST',
+        'path': 'delete_user' # posso eliminare solo il mio account
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'userinfo'
+    },
+    {
+        'service': 'auth',
+        'method': 'POST',
+        'path': 'introspect'
+    },
+    {
+        'service': 'auth',
+        'method': 'POST',
+        'path': 'tokens/revoke'
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'test'
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'test/normaluseronly'
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'test/adminuseronly'
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'test/bothroles'
+    },
+    {
+        'service': 'auth',
+        'method': 'GET',
+        'path': 'userid'
+    },
+
+    # gatcha microservice
+    # {
+    #     'service': 'gatcha',
+    #     'method': 'POST',
+    #     'path': 'gatchas' # solo gli admin possono creare gatchas
+    # },
+    # {
+    #     'service': 'gatcha',
+    #     'method': 'DELETE',
+    #     'path': 'gatchas/<gatcha_id>' # solo gli admin possono eliminare gatchas
+    # },
+    {
+        'service': 'gatcha',
+        'method': 'GET',
+        'path': 'roll'
+    },
+    {
+        'service': 'gatcha',
+        'method': 'GET',
+        'path': 'gatchas'
+    },
+    {
+        'service': 'gatcha',
+        'method': 'GET',
+        'path': 'gatchas/<gatcha_id>' 
+    },
+    # {
+    #     'service': 'gatcha',
+    #     'method': 'PUT',
+    #     'path': 'gatchas/<gatcha_id>' # solo gli admin possono modificare gatchas
+    # },
+
+    # market microservice
+    {
+        'service': 'market',
+        'method': 'POST',
+        'path': 'add-auction'
+    },
+    # {
+    #     'service': 'market',
+    #     'method': 'DELETE',
+    #     'path': 'delete-auction' # solo gli admin possono eliminare aste
+    # },
+    {
+        'service': 'market',
+        'method': 'POST',
+        'path': 'bid' # i normalUser possono fare offerte
+    },
+    {
+        'service': 'market',
+        'method': 'GET',
+        'path': 'auction' # chiunque può vedere le aste
+    },
+    {
+        'service': 'market',
+        'method': 'GET',
+        'path': 'auctions' # chiunque può vedere le aste
+    },
+    {
+        'service': 'market',
+        'method': 'GET',
+        'path': 'checkconnection'
+    },
+
+    # user microservice
+    # {
+    #     'service': 'user',
+    #     'method': 'POST',
+    #     'path': 'init-user' # chiamabile solo dal microservizio auth, gli utenti non possono chiamarlo
+    # },
+    # {
+    #     'service': 'user',
+    #     'method': 'POST',
+    #     'path': 'delete_user' # chiamabile solo dal microservizio auth, gli utenti non possono chiamarlo
+    # },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'users/<userID>' # TODO: questo deve rimanere nella whitelist o va tolto? ogni utente può sapere la balance degli altri?
+    },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'balance' # gli utenti possono sapere la loro balance
+    },
+    {
+        'service': 'user',
+        'method': 'POST',
+        'path': 'increase_balance' # gli utenti possono aumentare la loro balance (simula l'acquisto di ricarica)
+    },
+    # {
+    #     'service': 'user',
+    #     'method': 'POST',
+    #     'path': 'decrease_balance'
+    # },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'transactions' # utente1 può vedere le transazioni di utente1
+    },
+    # {
+    #     'service': 'user',
+    #     'method': 'POST',
+    #     'path': 'refund'
+    # },
+    # {
+    #     'service': 'user',
+    #     'method': 'POST',
+    #     'path': 'add_gatcha' # solo gli admin o gli endpoint possono aggiungere gatchas senza fare roll
+    # },
+    # {
+    #     'service': 'user',
+    #     'method': 'POST',
+    #     'path': 'remove_gatcha' # solo gli admin o gli endpoint possono rimuovere gatchas
+    # },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'collection' # user1 può vedere la sua collezione
+    },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'collection/<gatcha_ID>' # user1 può vedere un gatcha della sua collezione
+    },
+    {
+        'service': 'user',
+        'method': 'GET',
+        'path': 'checkconnection'
+    },
+    # {
+    #     'service': 'user',
+    #     'method': 'GET',
+    #     'path': 'getAll'
+    # }
+]
+
+def is_request_allowed(service_name: str, method: str, subpath: str) -> bool:
+    """
+    Checks if the incoming request is allowed based on the whitelist.
+
+    Args:
+        service_name (str): The name of the target service.
+        method (str): HTTP method of the request.
+        subpath (str): The subpath of the request.
+
+    Returns:
+        bool: True if the request is allowed, False otherwise.
+    """
+    # Normalize the subpath by removing leading and trailing slashes
+    normalized_subpath = subpath.strip('/')
+    
+    logger.debug(f"Checking if request to {service_name}/{subpath} with method {method} is allowed")
+
+    for rule in WHITELIST:
+        # Check if the service and method match
+        if rule['service'] == service_name and method == rule['method']:
+            # Normalize the rule path by removing leading and trailing slashes
+            normalized_rule_path = rule['path'].strip('/')
+
+            # Split the paths into parts
+            rule_path_parts = normalized_rule_path.split('/')
+            subpath_parts = normalized_subpath.split('/')
+
+            # Check if the number of parts in the rule path and subpath match
+            if len(rule_path_parts) == len(subpath_parts):
+                match = True
+                for rule_part, subpath_part in zip(rule_path_parts, subpath_parts):
+                    # Check if each part matches or is a parameter (e.g., <gatcha_id>)
+                    if rule_part != subpath_part and not (rule_part.startswith('<') and rule_part.endswith('>')):
+                        match = False
+                        break
+
+                if match:
+                    return True
+
+    return False
 
 def forward_request(service_name: str, subpath: str) -> Response:
     """
     Forwards the incoming request to the specified service with the given subpath.
-    
+
     Args:
         service_name (str): The name of the target service.
         subpath (str): The subpath to append to the service URL.
-    
+
     Returns:
         Response: The response object from the target service.
     """
     
-   # Validazione del nome del servizio
+    logger.debug(f"Trying to forward the request to {service_name}/{subpath}")
+    
+    # Validate the service name
     if not validate_input(service_name, VALID_SERVICE_REGEX):
         logger.warning(f"Invalid service name: {service_name}")
         return jsonify({'error': 'Invalid service name'}), 400
 
-    # Recupera l'URL di base del servizio
+    # Retrieve the base URL of the service
     base_url = SERVICE_URLS.get(service_name)
     if not base_url:
         logger.warning(f"Unknown service: {service_name}")
         return jsonify({'error': 'Service not found'}), 404
 
-    # Validazione del subpath
+    # Validate the subpath
     if not validate_input(subpath, VALID_SUBPATH_REGEX):
         logger.warning(f"Invalid subpath: {subpath}")
         return jsonify({'error': 'Invalid subpath'}), 400
 
-    # Costruisci l'URL target senza i parametri della query string
+    # Check if the request is allowed
+    if not is_request_allowed(service_name, request.method, subpath):
+        logger.warning(f"Request to {service_name}/{subpath} with method {request.method} is not allowed because is not in the whitelist.")
+        return jsonify({'error': 'This endpoint was not found in this user gateway. (debug: it is not in the whitelist)'}), 404 # TODO: remove debug message
+
+    # Construct the target URL
     target_url = f"{base_url}/{subpath}"
     logger.info(f"Forwarding {request.method} request to {target_url} without query parameters")
 
     try:
-        # Prepara gli header (escludendo 'host' per evitare conflitti)
+        # Prepare headers (excluding 'host' to avoid conflicts)
         headers = {key: value for key, value in request.headers if key.lower() != 'host'}
 
-        # Inoltra la richiesta senza parametri della query string
+        # Forward the request without query parameters
         response = requests.request(
             method=request.method,
-            url=target_url,  # Usa solo il target URL senza parametri
+            url=target_url,
             data=request.get_data(),
             headers=headers,
             cookies=request.cookies,
             allow_redirects=False,
-            timeout=10  # Timeout personalizzabile
+            timeout=10
         )
 
-        # Rimuovi header non necessari nella risposta
+        # Remove unnecessary headers in the response
         excluded_headers = ['content-encoding', 'transfer-encoding', 'connection']
         headers = [(name, value) for name, value in response.raw.headers.items()
                    if name.lower() not in excluded_headers]
@@ -130,14 +389,15 @@ def index():
     """Health check route."""
     return jsonify({"message": "API Gateway is running"}), 200
 
-# INPUT SANIFICATION ----------------------------------------------------------------
-
+# INPUT SANITIZATION -----------------------------------------------------------
 def sanitize_input(data: str) -> str:
     """
     Sanitizes input string by removing potentially dangerous characters.
     This helps prevent injection attacks.
+
     Args:
         data (str): Input string to sanitize.
+
     Returns:
         str: Sanitized string.
     """

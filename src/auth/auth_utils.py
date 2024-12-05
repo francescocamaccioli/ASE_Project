@@ -16,22 +16,21 @@ logger = logging.getLogger(__name__)
 # ATTENZIONE: OGNI VOLTA CHE SI MODIFICA, LA NUOVA VERSIONE VA COPIATA IN TUTTI I MICROSERVIZI
 # per farlo, usare il file /shared/sync.py
 
-ADMIN_GATEWAY_URL = getenv("ADMIN_GATEWAY_URL")
-
+AUTH_URL = getenv("AUTH_URL")
 
 def introspect_token(token):
     """Introspect the token using the /auth/introspect endpoint."""
-    response = requests.post(f"{ADMIN_GATEWAY_URL}/auth/introspect", data={"token": token})
+    response = requests.post(f"{AUTH_URL}/introspect", data={"token": token})
     if response.status_code == 200:
         claims = json.loads(response.text)
         logger.debug("Introspected token: " + str(claims))
         return claims
     elif response.status_code == 401:
-        logger.warning("The server returned 401 while introspecting the token" + response.text)
+        logger.warning("The server returned 401 while introspecting the token" + json.loads(response.text).get("error", "Unknown error"))
         raise ValueError("Invalid token: " + json.loads(response.text).get("error", "Unknown error"))
     else:
-        logger.error("The server responded with an unexpected status code " + response.status_code + " while introspecting the token: " + response.text)
-        raise ValueError("Error while introspecting token: " + response.text)
+        logger.error("The server responded with an unexpected status code " + str(response.status_code) + " while introspecting the token: " + json.loads(response.text).get("error", "Unknown error"))
+        raise ValueError("Error while introspecting token: " + json.loads(response.text).get("error", "Unknown error"))
 
 def role_required(*required_roles):
     """Decorator to check if the user has the required roles."""

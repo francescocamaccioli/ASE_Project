@@ -69,7 +69,7 @@ def add_auction():
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
 
-@app.route('/delete-auction', methods=['DELETE'])
+@app.route('/delete-auction', methods=['DELETE']) # TODO: manca test
 @role_required('adminUser')
 def delete_auction():
     data = request.json
@@ -225,7 +225,7 @@ def get_all_auctions():
     except ServerSelectionTimeoutError:
         return make_response(jsonify({"error": "Could not connect to MongoDB server."}), 500)
 
- # Endpoint per verificare la connessione al database
+# Endpoint per verificare la connessione al database
 @app.route('/checkconnection', methods=['GET'])
 def check_connection():
     try:

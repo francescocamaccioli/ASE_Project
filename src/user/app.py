@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 # URLS dei microservizi
 GATCHA_URL = os.getenv('GATCHA_URL')
-GATEWAY_URL = os.getenv('GATEWAY_URL')
 MARKET_URL = os.getenv('MARKET_URL')
 
 
@@ -29,6 +28,8 @@ def userExists(userID):
     return db_user.collection.find_one({"userID": userID}) is not None
 
 # Endpoint per registrare un utente passando i dati nel body della richiesta
+# questo endpoint dovrebbe essere chiamabile solo dal microservizio 'auth'
+# nessun utente dovrebbe normalmente chiamare questo endpoint
 @app.route('/init-user', methods=['POST'])
 def init_user():
     try:
@@ -135,10 +136,13 @@ def decrease_balance():
     userID = data.get("userID")
     amount = data.get("amount")
     try:
+        logger.debug(f"Attempting to decrease balance for userID: {userID} by amount: {amount}")
         user = db_user.collection.find_one({"userID": userID})
         if user is None:
+            logger.debug(f"User with userID {userID} not found")
             return make_response(jsonify({"error": "User not found"}), 404)
         if user["balance"] < amount:
+            logger.debug(f"Insufficient funds for userID {userID}. Current balance: {user['balance']}, requested amount: {amount}")
             return make_response(jsonify({"error": "Insufficient funds"}), 400)
         db_user.collection.update_one({"userID": userID}, {"$inc": {"balance": -amount}})
         transaction = {
@@ -147,8 +151,10 @@ def decrease_balance():
             "timestamp": datetime.now()
         }
         db_user.collection.update_one({"userID": userID}, {"$push": {"transactions": transaction}})
+        logger.debug(f"Balance decreased successfully for userID {userID}. New balance: {user['balance'] - amount}")
         return make_response(jsonify({"message": "Balance updated successfully"}), 200)
     except Exception as e:
+        logger.error(f"Error decreasing balance for userID {userID}: {str(e)}")
         return make_response(jsonify({"error": str(e)}), 500)
     
 # endpoint to get the full list of transactions of a user

@@ -19,7 +19,8 @@ SERVICE_URLS = {
     'user': os.getenv('USER_URL'),
     'gatcha': os.getenv('GATCHA_URL'),
     'market': os.getenv('MARKET_URL'),
-    'dbm': os.getenv('DBM_URL'),
+    'storage': os.getenv('MINIO_STORAGE_URL'),
+    'auth': os.getenv('AUTH_URL')
 }
 
 def forward_request(service_name: str, subpath: str) -> Response:
@@ -33,6 +34,9 @@ def forward_request(service_name: str, subpath: str) -> Response:
     Returns:
         Response: The response object from the target service.
     """
+    
+    logger.debug(f"Trying to forward the request to {service_name}/{subpath}")
+    
     base_url = SERVICE_URLS.get(service_name)
     if not base_url:
         logger.warning(f"Unknown service: {service_name}")
@@ -96,6 +100,18 @@ def internal_error(error):
     return jsonify({'error': 'Internal server error'}), 500
 
 # ROUTES -----------------------------------------------------------------------
+
+
+@app.route('/auth/login', methods=['POST'])
+def login():
+    """
+    Login route for the admin user.
+    This is the only route that does not require authentication.
+    """
+    return forward_request('auth', 'login')
+
+
+
 @app.route('/<service>/<path:subpath>', methods=['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'])
 @role_required('adminUser')
 def gateway_handler(service, subpath):

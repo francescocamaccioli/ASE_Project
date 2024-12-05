@@ -32,8 +32,8 @@ UNIT_TEST_MODE = os.getenv('UNIT_TEST_MODE', 'False') == 'True'
 
 if UNIT_TEST_MODE:
     app.logger.info("Running in unit test mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    from mocks import mock_requests, no_op_decorator, fake_get_userID_from_jwt # mocks.py in the same folder
-    mock_requests() # after calling this function, the requests are now mocked: they answer with the mocks defined inside app.py
+    from mocks import start_mocking_http_requests, no_op_decorator, fake_get_userID_from_jwt # mocks.py in the same folder
+    start_mocking_http_requests() # after calling this function, the requests are now mocked: they answer with the mocks defined inside app.py
     role_required = no_op_decorator # override the role_required decorator to do nothing
     get_userID_from_jwt = fake_get_userID_from_jwt # override the get_userID_from_jwt function to return a predefined user ID
 else :

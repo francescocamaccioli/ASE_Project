@@ -393,20 +393,7 @@ def index():
     """Health check route."""
     return jsonify({"message": "API Gateway is running"}), 200
 
-# INPUT SANITIZATION -----------------------------------------------------------
-def sanitize_input(data: str) -> str:
-    """
-    Sanitizes input string by removing potentially dangerous characters.
-    This helps prevent injection attacks.
 
-    Args:
-        data (str): Input string to sanitize.
-
-    Returns:
-        str: Sanitized string.
-    """
-    # Sanitize using bleach, only allowing safe HTML tags if needed
-    return bleach.clean(data, tags=[], attributes=[], strip=False, protocols=['http', 'https'])
 
 def validate_input(input_value: str, regex: str) -> bool:
     """
@@ -420,22 +407,3 @@ def validate_input(input_value: str, regex: str) -> bool:
         bool: True if the input matches the regex, False otherwise.
     """
     return re.match(regex, input_value) is not None
-
-def sanitize_query_params(params):
-    """
-    Sanitize query string parameters to ensure no unsafe characters are present.
-
-    Args:
-        params (MultiDict): The query parameters to sanitize.
-
-    Returns:
-        dict: The sanitized query parameters.
-    """
-    sanitized_params = {}
-    for key, value in params.items():
-        if validate_input(key, VALID_QUERY_PARAM_REGEX) and validate_input(value, VALID_QUERY_PARAM_REGEX):
-            sanitized_params[key] = value
-        else:
-            logger.warning(f"Unsafe query parameter detected: {key}={value}")
-            sanitized_params[key] = None  # Or you can exclude it entirely, depending on the use case
-    return sanitized_params

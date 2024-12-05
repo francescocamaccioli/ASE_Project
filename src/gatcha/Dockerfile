@@ -1,18 +1,22 @@
-FROM python:3.9-slim
+# Usa l'immagine di base Python
+FROM python:3.10-slim
 
-# Imposta la directory di lavoro nel container
+# Setta la directory di lavoro
 WORKDIR /app
 
-# Copia solo il file delle dipendenze prima
+# Copia i file dei requisiti per installare le dipendenze
 COPY requirements.txt /app/
 
-# Installa le dipendenze necessarie
+# Aggiorna pip e setuptools per risolvere eventuali vulnerabilità
+RUN pip install --upgrade pip setuptools
+
+# Installa le dipendenze
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia i file del progetto nel container
+# Copia tutto il contenuto del progetto nella directory di lavoro
 COPY . /app
 
-# Esponi la porta su cui l'app Flask girerà (5000)
+# Esponi la porta su cui il servizio Flask sarà in ascolto
 EXPOSE 5000
 
 # Comando di esecuzione dell'applicazione

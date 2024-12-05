@@ -7,6 +7,9 @@ WORKDIR /app
 # Copia i file dei requisiti per installare le dipendenze
 COPY requirements.txt /app/
 
+# Aggiorna pip e setuptools per risolvere eventuali vulnerabilità
+RUN pip install --upgrade pip setuptools
+
 # Installa le dipendenze
 RUN pip install --no-cache-dir -r requirements.txt
 

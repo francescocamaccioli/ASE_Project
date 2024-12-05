@@ -1,0 +1,1106 @@
+openapi: 3.0.3
+info:
+  title: Microservices Project API
+  description: Comprehensive OpenAPI specification for the Microservices Project, including Authentication, User, Gatcha, Market services, API Gateway, and Admin Gateway.
+  version: 1.0.0
+servers:
+  - url: https://api.yourdomain.com/
+    description: Production Server
+  - url: http://localhost:5000/
+    description: Development Server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # User Schemas
+    User:
+      type: object
+      properties:
+        userID:
+          type: string
+          description: Unique identifier for the user.
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        role:
+          type: string
+          enum: [adminUser, normalUser]
+      required:
+        - userID
+        - username
+        - email
+        - password
+        - role
+    
+    # Admin Schemas
+    AdminAction:
+      type: object
+      properties:
+        action:
+          type: string
+          description: The administrative action to perform.
+        parameters:
+          type: object
+          description: Parameters required for the action.
+      required:
+        - action
+
+    SystemHealth:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Current status of the system.
+        uptime:
+          type: string
+          description: System uptime duration.
+        services:
+          type: array
+          items:
+            type: object
+            properties:
+              serviceName:
+                type: string
+              status:
+                type: string
+      required:
+        - status
+        - uptime
+        - services
+
+    UserInitialization:
+      type: object
+      properties:
+        userID:
+          type: string
+        balance:
+          type: integer
+          default: 0
+        collection:
+          type: array
+          items:
+            type: string
+        transactions:
+          type: array
+          items:
+            type: string
+      required:
+        - userID
+
+    # Authentication Schemas
+    AuthRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          default: bearer
+        expires_in:
+          type: integer
+      required:
+        - access_token
+        - token_type
+        - expires_in
+
+    TokenIntrospection:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
+
+    TokenIntrospectionResponse:
+      type: object
+      properties:
+        active:
+          type: boolean
+        userID:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        permissions:
+          type: array
+          items:
+            type: string
+      required:
+        - active
+
+    # Gatcha Schemas
+    Gatcha:
+      type: object
+      properties:
+        gatcha_id:
+          type: string
+        name:
+          type: string
+        rarity:
+          type: string
+          enum: [comune, raro, epico, leggendario]
+        image_url:
+          type: string
+          format: uri
+      required:
+        - gatcha_id
+        - name
+        - rarity
+        - image_url
+
+    # Auction Schemas
+    Auction:
+      type: object
+      properties:
+        Auction_ID:
+          type: integer
+        Gatcha_ID:
+          type: string
+        Auctioner_ID:
+          type: string
+        Winner_ID:
+          type: string
+          nullable: true
+        starting_price:
+          type: integer
+        current_price:
+          type: integer
+        creation_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+      required:
+        - Auction_ID
+        - Gatcha_ID
+        - Auctioner_ID
+        - starting_price
+        - current_price
+        - creation_time
+        - end_time
+
+    Bid:
+      type: object
+      properties:
+        Bid_ID:
+          type: integer
+        Auction_ID:
+          type: integer
+        User_ID:
+          type: string
+        amount:
+          type: integer
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - Bid_ID
+        - Auction_ID
+        - User_ID
+        - amount
+        - timestamp
+
+    # Error Schema
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+paths:
+  # Authentication Service Endpoints
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: User registered successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: Invalid input.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user and obtain access token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Authentication successful.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Unauthorized.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/editinfo:
+    post:
+      tags:
+        - Authentication
+      summary: Edit user information.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+              required:
+                - email
+      responses:
+        '200':
+          description: User information updated successfully.
+        '400':
+          description: Invalid input.
+        '401':
+          description: Unauthorized.
+
+  /auth/delete_user:
+    post:
+      tags:
+        - Authentication
+      summary: Delete a user account.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userID:
+                  type: string
+              required:
+                - userID
+      responses:
+        '200':
+          description: User deleted successfully.
+        '400':
+          description: Invalid input.
+        '401':
+          description: Unauthorized.
+
+  /auth/userinfo:
+    get:
+      tags:
+        - Authentication
+      summary: Get authenticated user's information.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User information retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userID:
+                    type: string
+                  username:
+                    type: string
+                  email:
+                    type: string
+                  role:
+                    type: string
+        '401':
+          description: Unauthorized.
+
+  /auth/introspect:
+    post:
+      tags:
+        - Authentication
+      summary: Introspect an access token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenIntrospection'
+      responses:
+        '200':
+          description: Token introspection result.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenIntrospectionResponse'
+        '400':
+          description: Invalid input.
+        '401':
+          description: Unauthorized.
+
+  /auth/tokens/revoke:
+    post:
+      tags:
+        - Authentication
+      summary: Permits User Logout
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+              required:
+                - token
+      responses:
+        '200':
+          description: Logout Successful.
+        '400':
+          description: Invalid input.
+        '401':
+          description: Unauthorized.
+          
+  /auth/debug/users:
+    get:
+      tags:
+        - Authentication
+      summary: Retrieve all users for debugging purposes (Admin only).
+      security:
+        - BearerAuth:
+            - adminUser
+      responses:
+        '200':
+          description: List of users retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized.
+        '403':
+          description: Forbidden.
+
+  # User Service Endpoints
+  
+  /user/users/{userID}:
+    get:
+      tags:
+        - User
+      summary: Admin can retrieve the user information by specifying its ID.
+      security:
+        - BearerAuth:
+            - adminUser
+      parameters:
+        - in: path
+          name: userID
+          schema:
+            type: string
+          required: true
+          description: Unique ID of the user.
+      responses:
+        '200':
+          description: User information retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userID:
+                    type: string
+                  balance:
+                    type: integer
+                  collection:
+                    type: array
+                    items:
+                      type: string
+                  transactions:
+                    type: array
+                    items:
+                      type: string
+        '404':
+          description: User not found.
+        '401':
+          description: Unauthorized.
+
+  /user/balance:
+    get:
+      tags:
+        - User
+      summary: Get user's balance.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: userID
+          schema:
+            type: string
+          required: true
+          description: Unique ID of the user.
+      responses:
+        '200':
+          description: Balance retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance:
+                    type: integer
+        '500':
+          description: Internal server error.
+
+  /user/increase_balance:
+    post:
+      tags:
+        - User
+      summary: Increase user's balance.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userID:
+                  type: string
+                amount:
+                  type: integer
+              required:
+                - userID
+                - amount
+      responses:
+        '200':
+          description: Balance increased successfully.
+        '500':
+          description: Internal server error.
+
+
+  /user/transactions:
+    get:
+      tags:
+        - User
+      summary: Get the authenticated user's transaction history.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: userID
+          schema:
+            type: string
+          required: true
+          description: Unique ID of the user.
+      responses:
+        '200':
+          description: Transactions retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '500':
+          description: Internal server error.
+
+
+  /user/collection:
+    get:
+      tags:
+        - User
+      summary: Get the authenticated user's gatcha collection.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: userID
+          schema:
+            type: string
+          required: true
+          description: Unique ID of the user.
+      responses:
+        '200':
+          description: Collection retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+        '500':
+          description: Internal server error.
+
+  /user/collection/{gatcha_ID}:
+    get:
+      tags:
+        - User
+      summary: Get details of a specific gatcha in user's collection.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: gatcha_ID
+          schema:
+            type: string
+          required: true
+          description: Unique ID of the gatcha.
+      responses:
+        '200':
+          description: Gatcha details retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gatcha'
+        '500':
+          description: Internal server error.
+          
+  /user/add_gatcha:
+    post:
+      tags:
+        - User
+      summary: Add a gatcha to user's collection (Admin only).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userID:
+                  type: string
+                gatcha_ID:
+                  type: string
+              required:
+                - userID
+                - gatcha_ID
+      responses:
+        '200':
+          description: Gatcha added successfully.
+        '500':
+          description: Internal server error.
+
+  /user/remove_gatcha:
+    post:
+      tags:
+        - User
+      summary: Remove a gatcha from user's collection (Admin only).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userID:
+                  type: string
+                gatcha_ID:
+                  type: string
+              required:
+                - userID
+                - gatcha_ID
+      responses:
+        '200':
+          description: Gatcha removed successfully.
+        '500':
+          description: Internal server error.
+
+  /user/checkconnection:
+    get:
+      tags:
+        - User
+      summary: Check connection to User database (For Testing Purposes).
+      responses:
+        '200':
+          description: Connection successful.
+        '500':
+          description: Connection failed.
+  
+
+  # Gatcha Service Endpoints
+  /gatcha/gatchas:
+    post:
+      tags:
+        - Gatcha
+      summary: Add a new gatcha (Admin only).
+      security:
+        - BearerAuth:
+            - adminUser
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                json:
+                  type: string
+                # Additional gatcha fields can be included in JSON
+              required:
+                - file
+                - json
+      responses:
+        '201':
+          description: Gatcha created successfully.
+        '400':
+          description: Invalid input.
+        '403':
+          description: Forbidden.
+
+    get:
+      tags:
+        - Gatcha
+      summary: Get all gachas.
+      security:
+        - BearerAuth:
+            - adminUser
+            - normalUser
+      responses:
+        '200':
+          description: Gatchas retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Gatcha'
+        '500':
+          description: Internal server error.
+
+  /gatcha/gatchas/{gatcha_id}:
+    get:
+      tags:
+        - Gatcha
+      summary: Get more information regarding a gacha by specifying its ID.
+      security:
+        - BearerAuth:
+            - adminUser
+            - normalUser
+      parameters:
+        - in: path
+          name: gatcha_id
+          schema:
+            type: string
+          required: true
+          description: Unique ID of the gatcha.
+      responses:
+        '200':
+          description: Gatcha retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gatcha'
+        '404':
+          description: Gatcha not found.
+        '500':
+          description: Internal server error.
+
+    delete:
+      tags:
+        - Gatcha
+      summary: Delete a gatcha by ID (Admin only).
+      security:
+        - BearerAuth:
+            - adminUser
+      parameters:
+        - in: path
+          name: gatcha_id
+          schema:
+            type: string
+          required: true
+          description: Unique ID of the gatcha.
+      responses:
+        '200':
+          description: Gatcha deleted successfully.
+        '404':
+          description: Gatcha not found.
+        '500':
+          description: Internal server error.
+
+    put:
+      tags:
+        - Gatcha
+      summary: Update a gatcha by ID (Admin only).
+      security:
+        - BearerAuth:
+            - adminUser
+      parameters:
+        - in: path
+          name: gatcha_id
+          schema:
+            type: string
+          required: true
+          description: Unique ID of the gatcha.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                rarity:
+                  type: string
+                  enum: [comune, raro, epico, leggendario]
+                image_url:
+                  type: string
+                  format: uri
+      responses:
+        '200':
+          description: Gatcha updated successfully.
+        '400':
+          description: Invalid input.
+        '404':
+          description: Gatcha not found.
+        '500':
+          description: Internal server error.
+
+  /gatcha/roll:
+    get:
+      tags:
+        - Gatcha
+      summary: Roll a gatcha.
+      security:
+        - BearerAuth:
+            - normalUser
+      responses:
+        '200':
+          description: Gatcha rolled successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  gatcha_id:
+                    type: string
+                  rarity:
+                    type: string
+                  name:
+                    type: string
+                  image_url:
+                    type: string
+                    format: uri
+        '400':
+          description: Rolling not possible.
+        '500':
+          description: Internal server error.
+
+  # Market Service Endpoints
+  /market/add-auction:
+    post:
+      tags:
+        - Market
+      summary: Add a new auction.
+      security:
+        - BearerAuth:
+            - normalUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Gatcha_ID:
+                  type: string
+                starting_price:
+                  type: integer
+              required:
+                - Gatcha_ID
+                - starting_price
+      responses:
+        '201':
+          description: Auction added successfully.
+        '400':
+          description: Invalid input.
+        '500':
+          description: Internal server error.
+
+  /market/delete-auction:
+    delete:
+      tags:
+        - Market
+      summary: Delete an auction (Admin only).
+      security:
+        - BearerAuth:
+            - adminUser
+      parameters:
+        - in: query
+          name: Auction_ID
+          schema:
+            type: integer
+          required: true
+          description: Unique ID of the auction to delete.
+      responses:
+        '200':
+          description: Auction deleted successfully.
+        '404':
+          description: Auction not found.
+        '500':
+          description: Internal server error.
+
+  /market/bid:
+    post:
+      tags:
+        - Market
+      summary: Place a bid on an auction.
+      security:
+        - BearerAuth:
+            - normalUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                Auction_ID:
+                  type: integer
+                amount:
+                  type: integer
+              required:
+                - Auction_ID
+                - amount
+      responses:
+        '200':
+          description: Bid placed successfully.
+        '400':
+          description: Invalid input or bid too low.
+        '500':
+          description: Internal server error.
+
+  /market/auction:
+    get:
+      tags:
+        - Market
+      summary: Get details of a specific auction.
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: query
+          name: Auction_ID
+          schema:
+            type: integer
+          required: true
+          description: Unique ID of the auction.
+      responses:
+        '200':
+          description: Auction details retrieved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Auction'
+        '404':
+          description: Auction not found.
+        '500':
+          description: Internal server error.
+
+  /market/auctions:
+    get:
+      tags:
+        - Market
+      summary: Get all active auctions.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Auctions retrieved successfully.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Auction'
+        '500':
+          description: Internal server error.
+
+  /market/checkconnection:
+    get:
+      tags:
+        - Market
+      summary: Check connection to Market database (For Testing Purposes).
+      responses:
+        '200':
+          description: Connection successful.
+        '500':
+          description: Connection failed.
+
+
+
+  # Additional Test Routes (Auth Service)
+  /auth/test:
+    get:
+      tags:
+        - Authentication
+      summary: Test endpoint.
+      responses:
+        '200':
+          description: Test successful.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Hello, this is the auth service!"
+
+  /auth/test/normaluseronly:
+    get:
+      tags:
+        - Authentication
+      summary: Test endpoint for normal users only.
+      security:
+        - BearerAuth:
+            - normalUser
+      responses:
+        '200':
+          description: Accessed normal user-only endpoint.
+        '401':
+          description: Unauthorized.
+
+  /auth/test/adminuseronly:
+    get:
+      tags:
+        - Authentication
+      summary: Test endpoint for admin users only.
+      security:
+        - BearerAuth:
+            - adminUser
+      responses:
+        '200':
+          description: Accessed admin user-only endpoint.
+        '401':
+          description: Unauthorized.
+
+  /auth/test/bothroles:
+    get:
+      tags:
+        - Authentication
+      summary: Test endpoint for both normal and admin users.
+      security:
+        - BearerAuth:
+            - normalUser
+            - adminUser
+      responses:
+        '200':
+          description: Accessed endpoint requiring admin or user role.
+        '401':
+          description: Unauthorized.
+
+  /auth/userid:
+    get:
+      tags:
+        - Authentication
+      summary: Echo the userID from the JWT token.
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: userID echoed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userID:
+                    type: string
+        '401':
+          description: Unauthorized.
+
+  # Bucket Storage Endpoints (Storage Service)
+  /storage/gachabucket/images/{file_name}:
+    get:
+      tags:
+        - Storage
+      summary: Retrieve an image from the storage bucket.
+      parameters:
+        - in: path
+          name: file_name
+          schema:
+            type: string
+          required: true
+          description: Name of the image file.
+      responses:
+        '200':
+          description: Image retrieved successfully.
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Image not found.
+        '500':
+          description: Internal server error.
+
+security:
+  - BearerAuth: []

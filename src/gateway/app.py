@@ -24,7 +24,6 @@ SERVICE_URLS = {
     'user': os.getenv('USER_URL'),
     'gatcha': os.getenv('GATCHA_URL'),
     'market': os.getenv('MARKET_URL'),
-    'dbm': os.getenv('DBM_URL'),
     'storage': os.getenv('MINIO_STORAGE_URL'),
     'auth': os.getenv('AUTH_URL')
 }
@@ -36,20 +35,20 @@ WHITELIST = [
     {
         'service': 'storage',
         'method': 'GET',
-        'path': 'gachabucket/images/<file_name>'
+        'path': 'gachabucket/images/<file_name>' # accessibile anche a normalUser
     },
     
     # auth microservice
     {
         'service': 'auth',
         'method': 'POST',
-        'path': 'register'
+        'path': 'register' # accessibile anche a normalUser
     },
-    {
-        'service': 'auth',
-        'method': 'GET',
-        'path': 'debug/users'
-    },
+    # {
+    #     'service': 'auth',
+    #     'method': 'GET',
+    #     'path': 'debug/users' # accessibile solo a admin
+    # },
     {
         'service': 'auth',
         'method': 'POST',
@@ -196,21 +195,21 @@ WHITELIST = [
         'method': 'POST',
         'path': 'increase_balance'
     },
-    {
-        'service': 'user',
-        'method': 'POST',
-        'path': 'decrease_balance'
-    },
+    # {
+    #     'service': 'user',
+    #     'method': 'POST',
+    #     'path': 'decrease_balance'
+    # },
     {
         'service': 'user',
         'method': 'GET',
         'path': 'transactions'
     },
-    {
-        'service': 'user',
-        'method': 'POST',
-        'path': 'refund'
-    },
+    # {
+    #     'service': 'user',
+    #     'method': 'POST',
+    #     'path': 'refund'
+    # },
     {
         'service': 'user',
         'method': 'POST',
@@ -236,11 +235,11 @@ WHITELIST = [
         'method': 'GET',
         'path': 'checkconnection'
     },
-    {
-        'service': 'user',
-        'method': 'GET',
-        'path': 'getAll'
-    }
+    # {
+    #     'service': 'user',
+    #     'method': 'GET',
+    #     'path': 'getAll'
+    # }
 ]
 
 def is_request_allowed(service_name: str, method: str, subpath: str) -> bool:
@@ -257,6 +256,8 @@ def is_request_allowed(service_name: str, method: str, subpath: str) -> bool:
     """
     # Normalize the subpath by removing leading and trailing slashes
     normalized_subpath = subpath.strip('/')
+    
+    logger.debug(f"Checking if request to {service_name}/{subpath} with method {method} is allowed")
 
     for rule in WHITELIST:
         # Check if the service and method match
@@ -293,6 +294,9 @@ def forward_request(service_name: str, subpath: str) -> Response:
     Returns:
         Response: The response object from the target service.
     """
+    
+    logger.debug(f"Trying to forward the request to {service_name}/{subpath}")
+    
     # Validate the service name
     if not validate_input(service_name, VALID_SERVICE_REGEX):
         logger.warning(f"Invalid service name: {service_name}")
@@ -311,8 +315,8 @@ def forward_request(service_name: str, subpath: str) -> Response:
 
     # Check if the request is allowed
     if not is_request_allowed(service_name, request.method, subpath):
-        logger.warning(f"Request to {service_name}/{subpath} with method {request.method} is not allowed")
-        return jsonify({'error': 'Endpoint not accessible from this gateway'}), 403
+        logger.warning(f"Request to {service_name}/{subpath} with method {request.method} is not allowed because is not in the whitelist.")
+        return jsonify({'error': 'This endpoint was not found in this user gateway. (debug: it is not in the whitelist)'}), 404 # TODO: remove debug message
 
     # Construct the target URL
     target_url = f"{base_url}/{subpath}"

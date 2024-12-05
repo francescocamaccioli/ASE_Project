@@ -24,7 +24,7 @@ services:
 
   # Gateway Service RESERVED FOR ADMINS, with access to privileged endpoints
   admin-gateway:
-    build: ./gateway
+    build: ./admin-gateway
     ports:
       - "5002:5000"
     depends_on:

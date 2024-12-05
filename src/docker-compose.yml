@@ -6,8 +6,6 @@ x-common-environment:
   USER_URL: http://user:5000
   MARKET_URL: http://market:5000
   AUTH_URL: http://auth:5000
-  GATEWAY_URL: http://gateway:5000
-  ADMIN_GATEWAY_URL: http://admin-gateway:5000
 
 services:
   # Gateway Service
@@ -26,7 +24,7 @@ services:
 
   # Gateway Service RESERVED FOR ADMINS, with access to privileged endpoints
   admin-gateway:
-    build: ./gateway
+    build: ./admin-gateway
     ports:
       - "5002:5000"
     depends_on:

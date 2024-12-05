@@ -21,9 +21,10 @@ from minio.error import S3Error
 from rich.traceback import install
 install(show_locals=True)
 
-GATEWAY_URL = os.getenv("GATEWAY_URL")
 
 # region initializing vars ----------------------------------------
+
+USERL_URL = os.getenv('USER_URL')
 
 ROLL_PRICE = 10
 
@@ -292,18 +293,22 @@ def roll_gatcha():
             {'$inc': {'NTot': 1}}       # Incrementa il campo NTot di 1
         )
         
-        response = requests.post(GATEWAY_URL + "/user/decrease_balance", json={"userID": userID, "amount": ROLL_PRICE}, timeout=10)
-        
+        response = requests.post(USERL_URL + "/decrease_balance", json={"userID": userID, "amount": ROLL_PRICE}, timeout=10)
         if response.status_code != 200:
-            return make_response(jsonify({"error": "Failed to decrease balance"}, response.text), response.status_code)
+            return make_response(jsonify({"error": "Failed to decrease balance", "details": response.text}), response.status_code)
         
-        response = requests.post(GATEWAY_URL + "/user/add_gatcha", json={"userID": userID, "gatcha_ID": gatcha['_id']}, timeout=10)
-        
+        response = requests.post(USER_URL + "/add_gatcha", json={"userID": userID, "gatcha_ID": gatcha['_id']}, timeout=10)
         if response.status_code != 200:
             return make_response(jsonify({"error": "Failed to add gatcha", "details": response.text}), response.status_code)
         
         response = make_response(json_util.dumps({"message": "Gatcha rolled successfully", "gatcha": gatcha}), 200)
         response.headers['Content-Type'] = 'application/json'
+        
+        # Increment NTot for the selected gatcha
+        db[GATCHA_COLLECTION_NAME].update_one(
+            {'_id': gatcha['_id']},  # Trova il gatcha tramite il suo ID
+            {'$inc': {'NTot': 1}}       # Incrementa il campo NTot di 1
+        )
         return response
     except Exception as e:
         return make_response(str(e), 500)

@@ -23,9 +23,8 @@ TOKEN_EXPIRATION_MINUTES = 30
 
 AUTH_DB_URL = os.getenv("AUTH_DB_URL")
 AUTH_DB_NAME = os.getenv("AUTH_DB_NAME")
+USER_URL = os.getenv("USER_URL")
 JWT_SECRET = os.getenv("JWT_SECRET")
-GATEWAY_URL = os.getenv("GATEWAY_URL")
-ADMIN_GATEWAY_URL = os.getenv("ADMIN_GATEWAY_URL")
 
 
 
@@ -99,7 +98,8 @@ def register_user():
             return make_response(jsonify({"error": "Invalid email"}), 400)
         
         auth_db.users.insert_one(user)
-        response = requests.post(ADMIN_GATEWAY_URL+"/user/init-user", json={"userID": user["userID"]}, timeout=10)
+        
+        response = requests.post(USER_URL+"/init-user", json={"userID": user["userID"]}, timeout=10)
         if response.status_code != 201:
             return make_response(jsonify({"error": "Could not initialize user, problem with the user microservice"}), 502)
                     
@@ -217,8 +217,9 @@ def delete_user():
             return jsonify({"error": str(e)}), 401
         
         auth_db.users.delete_one({"userID": userID})
+        
         # invoke the user microservice to delete the user
-        response = requests.post(ADMIN_GATEWAY_URL+"/user/delete_user", json={"userID": userID}, timeout=10)
+        response = requests.post(USER_URL+"/user/delete_user", json={"userID": userID}, timeout=10)
         if response.status_code != 200:
             return make_response(jsonify({"error": "Could not delete user, problem with the user microservice "+ response.text}), 502)
         
@@ -239,17 +240,21 @@ Process:
 def userinfo_endpoint():
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Unauthorized. your request doesn't contain an authorization header."}), 401
+        app.logger.warning("Unauthorized access attempt without authorization header.")
+        return jsonify({"error": "Unauthorized. Your request doesn't contain an authorization header."}), 401
 
     token = auth_header.split(" ")[1]
     try:
         claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        app.logger.info(f"User info retrieved successfully for user ID: {claims['sub']}")
         return jsonify({
             "sub": claims["sub"],  # User ID
         })
-    except jwt.ExpiredSignatureError:
+    except jwt.ExpiredSignatureError as e:
+        app.logger.warning(f"Token expired for user info request. Exception: {str(e)}")
         return jsonify({"error": "Token expired"}), 401
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as e:
+        app.logger.warning(f"Invalid token for user info request. Token: {token}. Exception: {str(e)}")
         return jsonify({"error": "Invalid token"}), 401
 
 
@@ -264,17 +269,28 @@ Process :
 """
 @app.route('/introspect', methods=['POST'])
 def introspect_endpoint():
-    token = request.form.get("token")
+    try:
+        token = request.form.get("token")
+        if not token:
+            app.logger.error("Missing token in request")
+            return jsonify({"error": "Missing token"}), 400
+    except Exception as e:
+        app.logger.error(f"Error retrieving token from request: {str(e)}")
+        return jsonify({"error": "Missing token"}), 400
 
     try:
         claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
         if is_token_revoked(claims["jti"]):
+            app.logger.info(f"Token revoked: {claims['jti']}")
             return jsonify({"active": False, "error": "Token revoked"}), 401
+        app.logger.info(f"Token introspected successfully: {claims['jti']}")
         return jsonify(claims)
-    except jwt.ExpiredSignatureError:
+    except jwt.ExpiredSignatureError as e:
+        app.logger.warning(f"Token expired: {token}. Exception: {str(e)}")
         return jsonify({"active": False, "error": "Token expired"}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({"active": False, "error": "Invalid token"}), 401 
+    except jwt.InvalidTokenError as e:
+        app.logger.warning(f"Invalid token: {token}. Exception: {str(e)}")
+        return jsonify({"active": False, "error": "Invalid token"}), 401
 
 
 

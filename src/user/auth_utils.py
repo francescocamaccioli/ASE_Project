@@ -21,17 +21,21 @@ ADMIN_GATEWAY_URL = getenv("ADMIN_GATEWAY_URL")
 
 def introspect_token(token):
     """Introspect the token using the /auth/introspect endpoint."""
-    response = requests.post(f"{ADMIN_GATEWAY_URL}/auth/introspect", data={"token": token})
-    if response.status_code == 200:
-        claims = json.loads(response.text)
-        logger.debug("Introspected token: " + str(claims))
-        return claims
-    elif response.status_code == 401:
-        logger.warning("The server returned 401 while introspecting the token" + response.text)
-        raise ValueError("Invalid token: " + json.loads(response.text).get("error", "Unknown error"))
-    else:
-        logger.error("The server responded with an unexpected status code " + response.status_code + " while introspecting the token: " + response.text)
-        raise ValueError("Error while introspecting token: " + response.text)
+    try:
+        response = requests.post(f"{ADMIN_GATEWAY_URL}/auth/introspect", data={"token": token}, timeout=10)
+        if response.status_code == 200:
+            claims = json.loads(response.text)
+            logger.debug("Introspected token: " + str(claims))
+            return claims
+        elif response.status_code == 401:
+            logger.warning("The server returned 401 while introspecting the token" + response.text)
+            raise ValueError("Invalid token: " + json.loads(response.text).get("error", "Unknown error"))
+        else:
+            logger.error("The server responded with an unexpected status code " + str(response.status_code) + " while introspecting the token: " + response.text)
+            raise ValueError("Error while introspecting token: " + response.text)
+    except requests.exceptions.Timeout:
+        logger.error("Request to introspect token timed out")
+        raise ValueError("Request to introspect token timed out")
 
 def role_required(*required_roles):
     """Decorator to check if the user has the required roles."""

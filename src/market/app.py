@@ -48,7 +48,8 @@ def add_auction():
     try:
         response = requests.post(
             USER_URL + "/remove_gatcha",
-            json={"userID": auction["Auctioner_ID"], "gatcha_ID": auction["Gatcha_ID"]}
+            json={"userID": auction["Auctioner_ID"], "gatcha_ID": auction["Gatcha_ID"]},
+            timeout=10
         )
         if response.status_code != 200:
             return str(response)
@@ -87,7 +88,8 @@ def delete_auction():
             previous_bid_amount = auction["current_price"]
             response = requests.post(
                 USER_URL + "/refund",
-                json={"userID": previous_winner, "amount": previous_bid_amount}
+                json={"userID": previous_winner, "amount": previous_bid_amount},
+                timeout=10
             )
             if response.status_code != 200:
                 return make_response(jsonify({"error": "Failed to refund previous winner"}), 500)
@@ -115,7 +117,7 @@ def finalize_auction(auction_id, gatcha_id):
             response = requests.post(USER_URL + "/add_gatcha", json={
                 "userID": auction["Winner_ID"],
                 "gatcha_ID": gatcha_id
-            })
+            }, timeout=10)
             if response.status_code != 200:
                 print(f"Failed to add gatcha to winner for auction {auction_id}")
                 return
@@ -123,7 +125,7 @@ def finalize_auction(auction_id, gatcha_id):
             response = requests.post(USER_URL + "/increase_balance", json={
                 "userID": auction["Auctioner_ID"],
                 "amount": auction["current_price"]
-            })
+            }, timeout=10)
             if response.status_code != 200:
                 print(f"Failed to increase balance for auctioner {auction_id}")
                 return
@@ -132,7 +134,7 @@ def finalize_auction(auction_id, gatcha_id):
             response = requests.post(USER_URL + "/add_gatcha", json={
                 "userID": auction["Auctioner_ID"],
                 "gatcha_ID": gatcha_id
-            })
+            }, timeout=10)
             if response.status_code != 200:
                 print(f"Failed to return gatcha to auctioner for auction {auction_id}")
                 return
@@ -176,18 +178,17 @@ def bid():
             previous_bid_amount = auction["current_price"]
             response = requests.post(
                 USER_URL + "/refund",
-                json={"userID": previous_winner, "amount": previous_bid_amount}
+                json={"userID": previous_winner, "amount": previous_bid_amount},
+                timeout=10
             )
             if response.status_code != 200:
                 return make_response(jsonify({"error": "Failed to refund previous winner"}), 500)
         
-        jwt_token = request.headers.get('Authorization')
-        headers = {'Authorization': jwt_token}
         # decrease the bidder's balance
         response = requests.post(
             USER_URL + "/decrease_balance",
             json={"userID": userID, "amount": bid["amount"]},
-            headers=headers
+            timeout=10
         )
         if response.status_code != 200:
             return make_response(jsonify({"error": "Failed to decrease balance to bidder"}), 500)

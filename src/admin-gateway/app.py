@@ -18,8 +18,7 @@ logger = logging.getLogger(__name__)
 SERVICE_URLS = {
     'user': os.getenv('USER_URL'),
     'gatcha': os.getenv('GATCHA_URL'),
-    'market': os.getenv('MARKET_URL'),
-    'dbm': os.getenv('DBM_URL'),
+    'market': os.getenv('MARKET_URL')
 }
 
 def forward_request(service_name: str, subpath: str) -> Response:

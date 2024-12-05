@@ -1,0 +1,70 @@
+# Definisce un campo di estensione
+# serve per evitare di ripetere le stesse variabili in più servizi, senza dover fare copia-incolla
+x-common-environment:
+  &common-env
+  GATCHA_URL: https://gatcha:5000
+  USER_URL: https://user:5000
+  MARKET_URL: https://market:5000
+  AUTH_URL: https://auth:5000
+
+services:
+
+  # Gatcha service
+  gatcha:
+    build: .
+    container_name: gatcha-container-isolation
+    ports:
+      - "5001:5000"
+    depends_on:
+      - db-gatcha
+      - minio-storage
+    environment:
+      <<: *common-env
+      MINIO_STORAGE_URL: minio-storage:9000 # non mettere http:// o https:// perché lo mette da solo il client minio
+      MINIO_STORAGE_ACCESS_KEY: minioadmin
+      MINIO_STORAGE_SECRET_KEY: minioadmin
+      MINIO_STORAGE_BUCKET_NAME: gachabucket
+      GATCHA_DATABASE_URL: db-gatcha
+      UNIT_TEST_MODE: "True"
+    secrets:
+      - gatcha_cert
+      - gatcha_key
+
+  # MongoDB for gatcha (Database per il servizio Gatcha)
+  db-gatcha:
+    image: mongo:latest
+    container_name: db-gatcha-container-isolation
+    # ports:
+    # - "27017:27017"  # è esposta solo per debugging, da commentare in produzione.
+    volumes:
+      - dbdata-gatcha:/data/db
+      - ./mongo/seed-data:/docker-entrypoint-initdb.d # mongo, all'avvio, esegue automaticamente tutti i file .js che trova in quella cartella. serve per popolare con i dati iniziali. see: https://stackoverflow.com/questions/42912755/how-to-create-a-db-for-mongodb-container-on-start-up/42917632#42917632
+    environment:
+      MONGO_INITDB_DATABASE: gatcha_db  # Nome del database per Gatcha
+    command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
+
+  # a service to store files (images, etc.) in a bucket (like AWS S3)
+  # documentation: https://github.com/minio/minio?tab=readme-ov-file#container-installation
+  # if you open http://localhost:9001 from your browser, you can see the MinIO console
+  minio-storage:
+    image: quay.io/minio/minio   # The MinIO image
+    container_name: minio-storage-container-isolation
+    ports:
+      - "9000:9000"              # MinIO API
+      - "9001:9001"              # MinIO Console
+    environment:
+      MINIO_ROOT_USER: minioadmin # Access Key (Admin User)
+      MINIO_ROOT_PASSWORD: minioadmin # Secret Key (Admin Password)
+    command: server /data --console-address ":9001"  # Command to start the MinIO server
+    volumes:
+      - minio-volume:/data             # Persist data on the host machine
+
+volumes:
+  dbdata-gatcha:
+  minio-volume:  # Volume per i bucker MinIO
+
+secrets:
+  gatcha_cert:
+    file: ./localhost_cert.pem
+  gatcha_key:
+    file: ./localhost_key.pem

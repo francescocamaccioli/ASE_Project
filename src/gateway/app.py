@@ -29,7 +29,8 @@ SERVICE_URLS = {
 }
 
 # WHITELIST of allowed endpoints
-# TODO: togliere quelli non consentiti
+# if an endpoint is commented out or not present in the whitelist, it will be blocked
+# remember to add comments to explain why an endpoint is allowed or not allowed
 WHITELIST = [
     # minio storage microservice
     {
@@ -62,7 +63,7 @@ WHITELIST = [
     {
         'service': 'auth',
         'method': 'POST',
-        'path': 'delete_user'
+        'path': 'delete_user' # posso eliminare solo il mio account
     },
     {
         'service': 'auth',
@@ -106,16 +107,16 @@ WHITELIST = [
     },
 
     # gatcha microservice
-    {
-        'service': 'gatcha',
-        'method': 'POST',
-        'path': 'gatchas'
-    },
-    {
-        'service': 'gatcha',
-        'method': 'DELETE',
-        'path': 'gatchas/<gatcha_id>'
-    },
+    # {
+    #     'service': 'gatcha',
+    #     'method': 'POST',
+    #     'path': 'gatchas' # solo gli admin possono creare gatchas
+    # },
+    # {
+    #     'service': 'gatcha',
+    #     'method': 'DELETE',
+    #     'path': 'gatchas/<gatcha_id>' # solo gli admin possono eliminare gatchas
+    # },
     {
         'service': 'gatcha',
         'method': 'GET',
@@ -129,13 +130,13 @@ WHITELIST = [
     {
         'service': 'gatcha',
         'method': 'GET',
-        'path': 'gatchas/<gatcha_id>'
+        'path': 'gatchas/<gatcha_id>' 
     },
-    {
-        'service': 'gatcha',
-        'method': 'PUT',
-        'path': 'gatchas/<gatcha_id>'
-    },
+    # {
+    #     'service': 'gatcha',
+    #     'method': 'PUT',
+    #     'path': 'gatchas/<gatcha_id>' # solo gli admin possono modificare gatchas
+    # },
 
     # market microservice
     {
@@ -143,11 +144,11 @@ WHITELIST = [
         'method': 'POST',
         'path': 'add-auction'
     },
-    {
-        'service': 'market',
-        'method': 'DELETE',
-        'path': 'delete-auction'
-    },
+    # {
+    #     'service': 'market',
+    #     'method': 'DELETE',
+    #     'path': 'delete-auction' # solo gli admin possono eliminare aste
+    # },
     {
         'service': 'market',
         'method': 'POST',

@@ -9,7 +9,7 @@ on:
 
 jobs:
   integration-tests:
-    name: Build and Test Everything (INTEGRATION TEST)
+    name: Integration tests (build and run everything)
     runs-on: ubuntu-latest
 
     steps:
@@ -55,7 +55,7 @@ jobs:
 
 
   gatcha-service-isolation-tests:
-    name: Build and Test the GATCHA SERVICE (ISOLATION TEST)
+    name: Gatcha service isolation tests
     runs-on: ubuntu-latest
 
     steps:

@@ -238,17 +238,21 @@ Process:
 def userinfo_endpoint():
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith("Bearer "):
-        return jsonify({"error": "Unauthorized. your request doesn't contain an authorization header."}), 401
+        app.logger.warning("Unauthorized access attempt without authorization header.")
+        return jsonify({"error": "Unauthorized. Your request doesn't contain an authorization header."}), 401
 
     token = auth_header.split(" ")[1]
     try:
         claims = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        app.logger.info(f"User info retrieved successfully for user ID: {claims['sub']}")
         return jsonify({
             "sub": claims["sub"],  # User ID
         })
-    except jwt.ExpiredSignatureError:
+    except jwt.ExpiredSignatureError as e:
+        app.logger.warning(f"Token expired for user info request. Exception: {str(e)}")
         return jsonify({"error": "Token expired"}), 401
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as e:
+        app.logger.warning(f"Invalid token for user info request. Token: {token}. Exception: {str(e)}")
         return jsonify({"error": "Invalid token"}), 401
 
 
@@ -279,11 +283,11 @@ def introspect_endpoint():
             return jsonify({"active": False, "error": "Token revoked"}), 401
         app.logger.info(f"Token introspected successfully: {claims['jti']}")
         return jsonify(claims)
-    except jwt.ExpiredSignatureError:
-        app.logger.warning("Token expired")
+    except jwt.ExpiredSignatureError as e:
+        app.logger.warning(f"Token expired: {token}. Exception: {str(e)}")
         return jsonify({"active": False, "error": "Token expired"}), 401
-    except jwt.InvalidTokenError:
-        app.logger.warning("Invalid token")
+    except jwt.InvalidTokenError as e:
+        app.logger.warning(f"Invalid token: {token}. Exception: {str(e)}")
         return jsonify({"active": False, "error": "Invalid token"}), 401
 
 

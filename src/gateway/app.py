@@ -152,17 +152,17 @@ WHITELIST = [
     {
         'service': 'market',
         'method': 'POST',
-        'path': 'bid'
+        'path': 'bid' # i normalUser possono fare offerte
     },
     {
         'service': 'market',
         'method': 'GET',
-        'path': 'auction'
+        'path': 'auction' # chiunque può vedere le aste
     },
     {
         'service': 'market',
         'method': 'GET',
-        'path': 'auctions'
+        'path': 'auctions' # chiunque può vedere le aste
     },
     {
         'service': 'market',
@@ -171,30 +171,30 @@ WHITELIST = [
     },
 
     # user microservice
+    # {
+    #     'service': 'user',
+    #     'method': 'POST',
+    #     'path': 'init-user' # chiamabile solo dal microservizio auth, gli utenti non possono chiamarlo
+    # },
+    # {
+    #     'service': 'user',
+    #     'method': 'POST',
+    #     'path': 'delete_user' # chiamabile solo dal microservizio auth, gli utenti non possono chiamarlo
+    # },
     {
         'service': 'user',
-        'method': 'POST',
-        'path': 'init-user'
-    },
-    {
-        'service': 'user',
-        'method': 'POST',
-        'path': 'delete_user'
+        'method': 'GET',
+        'path': 'users/<userID>' # TODO: questo deve rimanere nella whitelist o va tolto? ogni utente può sapere la balance degli altri?
     },
     {
         'service': 'user',
         'method': 'GET',
-        'path': 'users/<userID>'
-    },
-    {
-        'service': 'user',
-        'method': 'GET',
-        'path': 'balance'
+        'path': 'balance' # gli utenti possono sapere la loro balance
     },
     {
         'service': 'user',
         'method': 'POST',
-        'path': 'increase_balance'
+        'path': 'increase_balance' # gli utenti possono aumentare la loro balance (simula l'acquisto di ricarica)
     },
     # {
     #     'service': 'user',
@@ -204,32 +204,32 @@ WHITELIST = [
     {
         'service': 'user',
         'method': 'GET',
-        'path': 'transactions'
+        'path': 'transactions' # utente1 può vedere le transazioni di utente1
     },
     # {
     #     'service': 'user',
     #     'method': 'POST',
     #     'path': 'refund'
     # },
+    # {
+    #     'service': 'user',
+    #     'method': 'POST',
+    #     'path': 'add_gatcha' # solo gli admin o gli endpoint possono aggiungere gatchas senza fare roll
+    # },
+    # {
+    #     'service': 'user',
+    #     'method': 'POST',
+    #     'path': 'remove_gatcha' # solo gli admin o gli endpoint possono rimuovere gatchas
+    # },
     {
         'service': 'user',
-        'method': 'POST',
-        'path': 'add_gatcha'
-    },
-    {
-        'service': 'user',
-        'method': 'POST',
-        'path': 'remove_gatcha'
+        'method': 'GET',
+        'path': 'collection' # user1 può vedere la sua collezione
     },
     {
         'service': 'user',
         'method': 'GET',
-        'path': 'collection'
-    },
-    {
-        'service': 'user',
-        'method': 'GET',
-        'path': 'collection/<gatcha_ID>'
+        'path': 'collection/<gatcha_ID>' # user1 può vedere un gatcha della sua collezione
     },
     {
         'service': 'user',

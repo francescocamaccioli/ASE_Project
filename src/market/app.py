@@ -225,7 +225,7 @@ def get_all_auctions():
     except ServerSelectionTimeoutError:
         return make_response(jsonify({"error": "Could not connect to MongoDB server."}), 500)
 
- # Endpoint per verificare la connessione al database
+# Endpoint per verificare la connessione al database
 @app.route('/checkconnection', methods=['GET'])
 def check_connection():
     try:

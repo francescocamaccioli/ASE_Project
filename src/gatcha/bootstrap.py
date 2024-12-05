@@ -1,12 +1,8 @@
 import requests
 import json
+import os
 
-"""
-ATTENZIONE: questo script viene eseguito ad ogni avvio del container
-TODO: Aggiungere un controllo per evitare di eseguirlo se è già stato eseguito in precedenza?
-"""
-
-
+STATE_FILE = './already_bootstrapped.txt'
 
 def send_request(url, name, rarity, file_path):
     payload = {'json': json.dumps({
@@ -24,10 +20,12 @@ def send_request(url, name, rarity, file_path):
         print(f"Successfully inserted images from {file_path}.")
     else:
         print(f"Failed to insert images from {file_path}. Status code: {response.status_code}, Response: {response.text}")
-        
 
+def main():
+    if os.path.exists(STATE_FILE):
+        print("Bootstrap has already been executed. Exiting.")
+        return
 
-if __name__ == "__main__":
     url = "https://127.0.0.1:5000/gatchas"
     
     objects = [
@@ -38,4 +36,10 @@ if __name__ == "__main__":
     
     for obj in objects:
         send_request(url, obj["name"], obj["rarity"], obj["file_path"])
-        
+
+    # Create the state file to indicate that the script has been executed
+    with open(STATE_FILE, 'w') as f:
+        f.write('Script executed')
+
+if __name__ == "__main__":
+    main()

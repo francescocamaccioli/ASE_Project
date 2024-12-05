@@ -4,7 +4,7 @@
 		"name": "integration-tests",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "26720283",
-		"_collection_link": "https://web.postman.co/workspace/ASE-project-ladygatcha~9f0fd141-4312-4348-9e57-9e529572e41c/collection/26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3?action=share&source=collection_link&creator=26720283"
+		"_collection_link": "https://ladygatcha-team.postman.co/workspace/ASE-project-ladygatcha~9f0fd141-4312-4348-9e57-9e529572e41c/collection/26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3?action=share&source=collection_link&creator=26720283"
 	},
 	"item": [
 		{
@@ -28,17 +28,17 @@
 									"",
 									"pm.test(\"Save access token to variable\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"    pm.environment.set(\"admin_token\", jsonData.access_token);",
 									"});",
 									"",
 									"pm.test(\"Save identity token to variable\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+									"    pm.environment.set(\"admin_identity_token\", jsonData.id_token);",
 									"});",
 									"",
 									"pm.test(\"Save user_id token to variable\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.environment.set(\"user_id\", jsonData.userID);",
+									"    pm.environment.set(\"admin_user_id\", jsonData.userID);",
 									"});"
 								],
 								"type": "text/javascript",
@@ -59,9 +59,9 @@
 							}
 						},
 						"url": {
-							"raw": "{{GATEWAY_URL}}/auth/login",
+							"raw": "{{ADMIN_GATEWAY_URL}}/auth/login",
 							"host": [
-								"{{GATEWAY_URL}}"
+								"{{ADMIN_GATEWAY_URL}}"
 							],
 							"path": [
 								"auth",
@@ -108,40 +108,6 @@
 								""
 							]
 						}
-					},
-					"response": []
-				},
-				{
-					"name": "/market/checkconnection",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Response status code is 200\", function () {",
-									"    pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{ADMIN_GATEWAY_URL}}/market/checkconnection",
-							"host": [
-								"{{ADMIN_GATEWAY_URL}}"
-							],
-							"path": [
-								"market",
-								"checkconnection"
-							]
-						},
-						"description": "We should be able to access all the public enpoints from the admin gateway."
 					},
 					"response": []
 				}
@@ -759,9 +725,9 @@
 							}
 						},
 						"url": {
-							"raw": "{{GATEWAY_URL}}/gatcha/gatchas/{{gatcha_id}}",
+							"raw": "{{ADMIN_GATEWAY_URL}}/gatcha/gatchas/{{gatcha_id}}",
 							"host": [
-								"{{GATEWAY_URL}}"
+								"{{ADMIN_GATEWAY_URL}}"
 							],
 							"path": [
 								"gatcha",
@@ -1342,18 +1308,22 @@
 				{
 					"name": "get all users from db",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImVtYWlsIjoidGVzdHVzZXJAZXhhbXBsZS5jb20iLCJyb2xlIjoibm9ybWFsVXNlciIsImV4cCI6MTczMjY1NjQ5M30.gAS9BPaFZU95iaIVdg1BCaFG494qM147uGPgPm9kge0",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"url": {
-							"raw": "{{GATEWAY_URL}}/auth/debug/users",
+							"raw": "{{ADMIN_GATEWAY_URL}}/auth/debug/users",
 							"host": [
-								"{{GATEWAY_URL}}"
+								"{{ADMIN_GATEWAY_URL}}"
 							],
 							"path": [
 								"auth",
@@ -1801,7 +1771,7 @@
 					"response": []
 				},
 				{
-					"name": "login - user2 again Copy",
+					"name": "login - user2 again",
 					"event": [
 						{
 							"listen": "test",
@@ -1839,6 +1809,97 @@
 						"body": {
 							"mode": "raw",
 							"raw": "{\n    \"username\": \"user2\",\n    \"password\": \"passwordissima\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/login",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/auth/editinfo",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"password\": \"newPassword\",\n    \"email\": \"new@email.org\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/editinfo",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"editinfo"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login - user2 with new credentials",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// va bene anche ",
+									"pm.test(\"Response status code is 200 or 400\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"pm.test(\"Save access token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"});",
+									"",
+									"pm.test(\"Save identity token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+									"});",
+									"",
+									"pm.test(\"Save user_id token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"user_id\", jsonData.userID);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"user2\",\n    \"password\": \"newPassword\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1912,6 +1973,15 @@
 								"exec": [
 									"pm.test(\"Response status code is 200\", function () {",
 									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test(\"userID is not empty\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    var userID = jsonData[0].userID;",
+									"    pm.expect(userID).to.be.not.empty;",
+									"",
+									"",
+									"    pm.environment.set(\"user_id\", userID);",
 									"});"
 								],
 								"type": "text/javascript",
@@ -1920,12 +1990,22 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{GATEWAY_URL}}/user/getAll",
+							"raw": "{{ADMIN_GATEWAY_URL}}/user/getAll",
 							"host": [
-								"{{GATEWAY_URL}}"
+								"{{ADMIN_GATEWAY_URL}}"
 							],
 							"path": [
 								"user",
@@ -1936,7 +2016,7 @@
 					"response": []
 				},
 				{
-					"name": "/user/get_user_from_name",
+					"name": "user info",
 					"event": [
 						{
 							"listen": "prerequest",
@@ -1967,11 +2047,21 @@
 						"disableBodyPruning": true
 					},
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\": \"testuser\"\n}",
+							"raw": "",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1979,9 +2069,9 @@
 							}
 						},
 						"url": {
-							"raw": "{{GATEWAY_URL}}/user/users/{{user_id}}",
+							"raw": "{{ADMIN_GATEWAY_URL}}/user/users/{{user_id}}",
 							"host": [
-								"{{GATEWAY_URL}}"
+								"{{ADMIN_GATEWAY_URL}}"
 							],
 							"path": [
 								"user",
@@ -2056,17 +2146,21 @@
 						}
 					],
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{admin_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{   \n    \"userID\": \"{{user_id}}\",\n    \"amount\": 20\n}",
+							"raw": "{\n    \"userID\": \"{{user_id}}\",\n    \"amount\" : 3\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2074,9 +2168,9 @@
 							}
 						},
 						"url": {
-							"raw": "{{GATEWAY_URL}}/user/decrease_balance",
+							"raw": "{{ADMIN_GATEWAY_URL}}/user/decrease_balance",
 							"host": [
-								"{{GATEWAY_URL}}"
+								"{{ADMIN_GATEWAY_URL}}"
 							],
 							"path": [
 								"user",
@@ -2131,49 +2225,6 @@
 							"path": [
 								"user",
 								"balance"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "roll a gatcha",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Response status code is 200\", function () {",
-									"    pm.expect(pm.response.code).to.equal(200);",
-									"});",
-									"",
-									"pm.test(\"Response body structure is valid\", function () {",
-									"    var responseJSON = pm.response.json();",
-									"    pm.expect(responseJSON.gatcha).to.be.an('object').that.includes.keys('_id', 'image', 'name', 'rarity', 'NTot');",
-									"});"
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{token}}",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{GATEWAY_URL}}/gatcha/roll",
-							"host": [
-								"{{GATEWAY_URL}}"
-							],
-							"path": [
-								"gatcha",
-								"roll"
 							]
 						}
 					},
@@ -2356,8 +2407,740 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "register user3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Verify response status code is 200 or 400 and contains error message\", function () {",
+									"    pm.expect(pm.response.code).to.satisfy((code) => {",
+									"        return code === 200 || (code === 400 && pm.response.json().error === \"User already exists\");",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"bidder\",\n    \"password\": \"gigapasswordissima\",\n    \"email\": \"bidder@test.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/register",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login - user3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// va bene anche ",
+									"pm.test(\"Response status code is 200 or 400\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"pm.test(\"Save access token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Save identity token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+									"});",
+									"",
+									"pm.test(\"Save user_id token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"user_id\", jsonData.userID);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"bidder\",      \n    \"password\": \"gigapasswordissima\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/login",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "increase balance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userID\": \"{{user_id}}\",\n    \"amount\" : 500\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/increase_balance",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"increase_balance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login - user1 again",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// va bene anche ",
+									"pm.test(\"Response status code is 200 or 400\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"pm.test(\"Save access token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Save identity token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+									"});",
+									"",
+									"pm.test(\"Save user_id token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"user_id\", jsonData.userID);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"testuser\",      \n    \"password\": \"testpassword\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/login",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "increase balance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userID\": \"{{user_id}}\",\n    \"amount\" : 500\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/increase_balance",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"increase_balance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "roll a gatcha",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test(\"Response body structure is valid\", function () {",
+									"    var responseJSON = pm.response.json();",
+									"    pm.expect(responseJSON.gatcha).to.be.an('object').that.includes.keys('_id', 'image', 'name', 'rarity', 'NTot');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/gatcha/roll",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"roll"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "roll a gatcha",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test(\"Response body structure is valid\", function () {",
+									"    var responseJSON = pm.response.json();",
+									"    pm.expect(responseJSON.gatcha).to.be.an('object').that.includes.keys('_id', 'image', 'name', 'rarity', 'NTot');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/gatcha/roll",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"roll"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "roll a gatcha",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"pm.test(\"Response body structure is valid\", function () {",
+									"    var responseJSON = pm.response.json();",
+									"    pm.expect(responseJSON.gatcha).to.be.an('object').that.includes.keys('_id', 'image', 'name', 'rarity', 'NTot');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/gatcha/roll",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"gatcha",
+								"roll"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get collection",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 when collection is retrieved\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains the user's collection\", function () {",
+									"    let jsonResponse = pm.response.json();",
+									"    pm.expect(jsonResponse).to.be.an('array'); // Assuming 'collection' is an array",
+									"});",
+									"",
+									"pm.test(\"Response time is acceptable\", function () {",
+									"    pm.expect(pm.response.responseTime).to.be.below(1000); // Expect response under 1 second",
+									"});",
+									"",
+									"pm.test(\"Error on invalid token\", function () {",
+									"    if (pm.response.code === 401) {",
+									"        let jsonResponse = pm.response.json();",
+									"        pm.expect(jsonResponse.error).to.eql(\"Error decoding token\");",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Error on user not found\", function () {",
+									"    if (pm.response.code === 404) {",
+									"        let jsonResponse = pm.response.json();",
+									"        pm.expect(jsonResponse.error).to.eql(\"User not found\");",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Server handles unexpected errors gracefully\", function () {",
+									"    if (pm.response.code === 500) {",
+									"        let jsonResponse = pm.response.json();",
+									"        pm.expect(jsonResponse).to.have.property(\"error\");",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Extract gatcha ID from the first gatcha in the response\", function () {",
+									"    let jsonResponse = pm.response.json();",
+									"    if (jsonResponse.length > 0) {",
+									"        pm.environment.set(\"gatcha_ID_tosell\", jsonResponse[0]);",
+									"    }",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/collection",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"collection"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/market/add-auction",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response message is 'auction added successfully'\", function () {",
+									"    pm.response.to.have.jsonBody('message', 'Auction added successfully');",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"Gatcha_ID\": \"{{gatcha_ID_tosell}}\",\n\t\"starting_price\": \"10\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/market/add-auction",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"market",
+								"add-auction"
+							]
+						},
+						"description": "The `POST /market/add-auction` endpoint is used to add a new auction to the market.\n\n### Request Body\n\n- The request should include the following parameters:\n    \n    - `auction_title` (text): The title of the auction.\n        \n    - `starting_price` (text): The starting price of the auction.\n        \n    - `end_date` (text): The end date of the auction.\n        \n    - `images` (file): Images related to the auction.\n        \n\n### Response\n\nThe response of this request is a JSON schema representing the structure of the response data."
+					},
+					"response": []
+				},
+				{
+					"name": "/market/auctions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{GATEWAY_URL}}/market/auctions",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"market",
+								"auctions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login - user2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// va bene anche ",
+									"pm.test(\"Response status code is 200 or 400\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"pm.test(\"Save access token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"});",
+									"",
+									"pm.test(\"Save identity token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+									"});",
+									"",
+									"pm.test(\"Save user_id token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"user_id\", jsonData.userID);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"user2\",\n    \"password\": \"passwordissima\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/login",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "bid",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"Auction_ID\": 1,\n    \"amount\": 20\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/market/bid",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"market",
+								"bid"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "login - user3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// va bene anche ",
+									"pm.test(\"Response status code is 200 or 400\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"pm.test(\"Save access token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"});",
+									"",
+									"",
+									"pm.test(\"Save identity token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+									"});",
+									"",
+									"pm.test(\"Save user_id token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"user_id\", jsonData.userID);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"bidder\",      \n    \"password\": \"gigapasswordissima\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/auth/login",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "bid",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"Auction_ID\": 1,\n    \"amount\": 30\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/market/bid",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"market",
+								"bid"
+							]
+						}
+					},
+					"response": []
 				}
 			]
+		},
+		{
+			"name": "/market/auctions Copy",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{GATEWAY_URL}}/market/auctions",
+					"host": [
+						"{{GATEWAY_URL}}"
+					],
+					"path": [
+						"market",
+						"auctions"
+					]
+				}
+			},
+			"response": []
 		},
 		{
 			"name": "gateway root",

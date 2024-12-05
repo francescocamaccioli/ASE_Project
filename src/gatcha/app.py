@@ -220,8 +220,8 @@ def add_gatcha_data():
         return make_response(json_util.dumps({"error": f"Database insert failed: {str(e)}"}), 500)
 
 
-@role_required('adminUser')
 @app.route('/gatchas/<gatcha_id>', methods=['DELETE'])
+@role_required('adminUser')
 def delete_gatcha(gatcha_id):
     """
     Admins can use this endpoint to delete a gatcha from the database.
@@ -287,16 +287,17 @@ def roll_gatcha():
         if not gatcha:
             return make_response(f"No gatcha found for rarity {selected_rarity}\n", 404)
         
-        jwt_token = request.headers.get('Authorization')
-        headers = {'Authorization': jwt_token}
+        # Increment NTot for the selected gatcha
+        db[GATCHA_COLLECTION_NAME].update_one(
+            {'_id': gatcha['_id']},  # Trova il gatcha tramite il suo ID
+            {'$inc': {'NTot': 1}}       # Incrementa il campo NTot di 1
+        )
         
-        response = requests.post(USERL_URL + "/decrease_balance", json={"userID": userID, "amount": ROLL_PRICE}, headers=headers)
-        
+        response = requests.post(USERL_URL + "/decrease_balance", json={"userID": userID, "amount": ROLL_PRICE}, timeout=10)
         if response.status_code != 200:
             return make_response(jsonify({"error": "Failed to decrease balance", "details": response.text}), response.status_code)
         
-        response = requests.post(USER_URL + "/add_gatcha", json={"userID": userID, "gatcha_ID": gatcha['_id']}, headers=headers)
-        
+        response = requests.post(USER_URL + "/add_gatcha", json={"userID": userID, "gatcha_ID": gatcha['_id']}, timeout=10)
         if response.status_code != 200:
             return make_response(jsonify({"error": "Failed to add gatcha", "details": response.text}), response.status_code)
         

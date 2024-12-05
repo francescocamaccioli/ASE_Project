@@ -75,6 +75,7 @@ def delete_user():
 
 # Endpoint per ottenere un utente passando il nome utente nel body della richiesta
 @app.route('/users/<userID>', methods=['GET'])
+@role_required('adminUser')
 def get_user_by_id(userID):
     try:
         user = db_user.collection.find_one({'userID': userID})
@@ -262,7 +263,7 @@ def get_gatcha_from_collection(gatcha_ID):
         if gatcha_ID not in user["collection"]:
             return make_response(jsonify({"error": "Gatcha not found in collection"}), 404)
         # GET request to Gatcha microservice to get gatcha info
-        response = requests.get(GATCHA_URL + "/gatchas/" + gatcha_ID)    #erased request to gateway
+        response = requests.get(GATCHA_URL + "/gatchas/" + gatcha_ID, timeout=10)    #erased request to gateway
         if response.status_code != 200:
             return make_response(jsonify({"error": "Failed to get gatcha info"}, response.text), 500)
         return make_response(response.json(), 200)

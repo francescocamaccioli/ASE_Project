@@ -13,6 +13,9 @@ import os
 import requests
 import redis
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 # for better error messages
 from rich.traceback import install
 install(show_locals=True)
@@ -98,7 +101,7 @@ def register_user():
             return make_response(jsonify({"error": "Invalid email"}), 400)
         
         auth_db.users.insert_one(user)
-        response = requests.post(USER_URL+"/init-user", json={"userID": user["userID"]})
+        response = requests.post(USER_URL+"/init-user", json={"userID": user["userID"]}, verify=False)
         if response.status_code != 201:
             return make_response(jsonify({"error": "Could not initialize user, problem with the user microservice"}), 502)
                     
@@ -217,7 +220,7 @@ def delete_user():
         
         auth_db.users.delete_one({"userID": userID})
         # invoke the user microservice to delete the user
-        response = requests.post(USER_URL+"/delete_user", json={"userID": userID})
+        response = requests.post(USER_URL+"/delete_user", json={"userID": userID}, verify=False)
         if response.status_code != 200:
             return make_response(jsonify({"error": "Could not delete user, problem with the user microservice "+ response.text}), 502)
         

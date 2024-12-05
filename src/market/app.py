@@ -11,6 +11,9 @@ import time
 from datetime import datetime, timedelta
 import logging
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 logging.basicConfig(level=logging.DEBUG)
 
 USER_URL = os.getenv('USER_URL')
@@ -48,7 +51,8 @@ def add_auction():
     try:
         response = requests.post(
             USER_URL + "/remove_gatcha",
-            json={"userID": auction["Auctioner_ID"], "gatcha_ID": auction["Gatcha_ID"]}
+            json={"userID": auction["Auctioner_ID"], "gatcha_ID": auction["Gatcha_ID"]},
+            verify=False
         )
         if response.status_code != 200:
             return str(response)
@@ -87,7 +91,8 @@ def delete_auction():
             previous_bid_amount = auction["current_price"]
             response = requests.post(
                 USER_URL + "/refund",
-                json={"userID": previous_winner, "amount": previous_bid_amount}
+                json={"userID": previous_winner, "amount": previous_bid_amount},
+                verify=False
             )
             if response.status_code != 200:
                 return make_response(jsonify({"error": "Failed to refund previous winner"}), 500)
@@ -115,7 +120,7 @@ def finalize_auction(auction_id, gatcha_id):
             response = requests.post(USER_URL + "/add_gatcha", json={
                 "userID": auction["Winner_ID"],
                 "gatcha_ID": gatcha_id
-            })
+            }, verify=False)
             if response.status_code != 200:
                 print(f"Failed to add gatcha to winner for auction {auction_id}")
                 return
@@ -123,7 +128,7 @@ def finalize_auction(auction_id, gatcha_id):
             response = requests.post(USER_URL + "/increase_balance", json={
                 "userID": auction["Auctioner_ID"],
                 "amount": auction["current_price"]
-            })
+            }, verify=False)
             if response.status_code != 200:
                 print(f"Failed to increase balance for auctioner {auction_id}")
                 return
@@ -132,7 +137,7 @@ def finalize_auction(auction_id, gatcha_id):
             response = requests.post(USER_URL + "/add_gatcha", json={
                 "userID": auction["Auctioner_ID"],
                 "gatcha_ID": gatcha_id
-            })
+            }, verify=False)
             if response.status_code != 200:
                 print(f"Failed to return gatcha to auctioner for auction {auction_id}")
                 return
@@ -167,16 +172,22 @@ def bid():
         if not auction:
             return make_response(jsonify({"error": "Auction not found"}), 404)
         
+        if auction["Auctioner_ID"] == userID:
+            return make_response(jsonify({"error": "You cannot bid on your own auction"}), 400)
+        
         if int(bid["amount"]) <= int(auction["current_price"]):
             return make_response(jsonify({"error": "Bid amount must be higher than current price"}), 400)
         
         # if the auction has a winner, his bid needs to be refounded
         if auction["Winner_ID"] != "":
+            if auction["Winner_ID"] == userID:
+                return make_response(jsonify({"error": "You are already the winner of this auction"}), 400)
             previous_winner = auction["Winner_ID"]
             previous_bid_amount = auction["current_price"]
             response = requests.post(
                 USER_URL + "/refund",
-                json={"userID": previous_winner, "amount": previous_bid_amount}
+                json={"userID": previous_winner, "amount": previous_bid_amount},
+                verify=False
             )
             if response.status_code != 200:
                 return make_response(jsonify({"error": "Failed to refund previous winner"}), 500)
@@ -187,7 +198,8 @@ def bid():
         response = requests.post(
             USER_URL + "/decrease_balance",
             json={"userID": userID, "amount": bid["amount"]},
-            headers=headers
+            headers=headers,
+            verify=False
         )
         if response.status_code != 200:
             return make_response(jsonify({"error": "Failed to decrease balance to bidder"}), 500)

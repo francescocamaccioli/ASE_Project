@@ -20,7 +20,7 @@ AUTH_URL = getenv("AUTH_URL")
 
 def introspect_token(token):
     """Introspect the token using the /auth/introspect endpoint."""
-    response = requests.post(f"{AUTH_URL}/introspect", data={"token": token})
+    response = requests.post(f"{AUTH_URL}/introspect", data={"token": token}, verify=False)
     if response.status_code == 200:
         claims = json.loads(response.text)
         logger.debug("Introspected token: " + str(claims))

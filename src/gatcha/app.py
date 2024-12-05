@@ -11,6 +11,9 @@ import uuid
 import requests
 from auth_utils import role_required, get_userID_from_jwt
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 # for handling image uploads to MinIO
 from werkzeug.utils import secure_filename
@@ -290,12 +293,12 @@ def roll_gatcha():
         jwt_token = request.headers.get('Authorization')
         headers = {'Authorization': jwt_token}
         
-        response = requests.post(USERL_URL + "/decrease_balance", json={"userID": userID, "amount": ROLL_PRICE}, headers=headers)
+        response = requests.post(USERL_URL + "/decrease_balance", json={"userID": userID, "amount": ROLL_PRICE}, headers=headers, verify=False)
         
         if response.status_code != 200:
             return make_response(jsonify({"error": "Failed to decrease balance", "details": response.text}), response.status_code)
         
-        response = requests.post(USER_URL + "/add_gatcha", json={"userID": userID, "gatcha_ID": gatcha['_id']}, headers=headers)
+        response = requests.post(USER_URL + "/add_gatcha", json={"userID": userID, "gatcha_ID": gatcha['_id']}, headers=headers, verify=False)
         
         if response.status_code != 200:
             return make_response(jsonify({"error": "Failed to add gatcha", "details": response.text}), response.status_code)

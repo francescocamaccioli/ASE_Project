@@ -16,4 +16,4 @@ COPY . /app
 EXPOSE 5000
 
 # Comando di esecuzione dell'applicazione
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000", "--debug"]
+CMD flask run --host=0.0.0.0 --port=5000 --debug --cert=/run/secrets/gatcha_cert --key=/run/secrets/gatcha_key

@@ -2,10 +2,10 @@
 # serve per evitare di ripetere le stesse variabili in più servizi, senza dover fare copia-incolla
 x-common-environment:
   &common-env
-  GATCHA_URL: http://gatcha:5000
-  USER_URL: http://user:5000
-  MARKET_URL: http://market:5000
-  AUTH_URL: http://auth:5000
+  GATCHA_URL: https://gatcha:5000
+  USER_URL: https://user:5000
+  MARKET_URL: https://market:5000
+  AUTH_URL: https://auth:5000
 
 services:
   # Gateway Service
@@ -21,6 +21,9 @@ services:
     environment:
       <<: *common-env
       MINIO_STORAGE_URL: http://minio-storage:9000
+    secrets:
+      - gateway_cert
+      - gateway_key
 
   # Gateway Service RESERVED FOR ADMINS, with access to privileged endpoints
   admin-gateway:
@@ -34,6 +37,9 @@ services:
       - auth
     environment:
       <<: *common-env
+    secrets:
+      - admin_gateway_cert
+      - admin_gateway_key
 
   auth:
     build: ./auth
@@ -45,6 +51,9 @@ services:
       AUTH_DB_URL: auth-db:27017
       AUTH_DB_NAME: auth_db
       JWT_SECRET: supersecret # TODO: usare i segreti di docker come visto in lab?
+    secrets:
+      - auth_cert
+      - auth_key
 
   auth-db:
     image: mongo:latest
@@ -70,6 +79,9 @@ services:
       MINIO_STORAGE_SECRET_KEY: minioadmin
       MINIO_STORAGE_BUCKET_NAME: gachabucket
       GATCHA_DATABASE_URL: db-gatcha
+    secrets:
+      - gatcha_cert
+      - gatcha_key
 
   # User Service
   user:
@@ -78,6 +90,9 @@ services:
       - db-user
     environment:
       <<: *common-env
+    secrets:
+      - user_cert
+      - user_key
 
   market:
     build: ./market
@@ -85,8 +100,9 @@ services:
       - db-market
     environment:
       <<: *common-env
-
-
+    secrets:
+      - market_cert
+      - market_key
 
   redis:
     image: redis:latest
@@ -153,4 +169,35 @@ volumes:
   minio-volume:  # Volume per i bucker MinIO
   redis-data:
 
+secrets:
+  gateway_cert:
+    file: ./gateway/localhost_cert.pem
+  gateway_key:
+    file: ./gateway/localhost_key.pem
+
+  admin_gateway_cert:
+    file: ./admin-gateway/localhost_cert.pem
+  admin_gateway_key:
+    file: ./admin-gateway/localhost_key.pem
+
+  auth_cert:
+    file: ./auth/localhost_cert.pem
+  auth_key:
+    file: ./auth/localhost_key.pem
+
+  gatcha_cert:
+    file: ./gatcha/localhost_cert.pem
+  gatcha_key:
+    file: ./gatcha/localhost_key.pem
+
+  user_cert:
+    file: ./user/localhost_cert.pem
+  user_key:
+    file: ./user/localhost_key.pem
+
+  market_cert:
+    file: ./market/localhost_cert.pem
+  market_key:
+    file: ./market/localhost_key.pem
+    
 # TODO: mettere su docker network separate tipo come avevo fatto nel disegno, però potrebbe volerci il bridge invece che dover mettere il gateway su due network allo stesso tempo

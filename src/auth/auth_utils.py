@@ -22,7 +22,7 @@ def introspect_token(token):
     """Introspect the token using the /auth/introspect endpoint."""
 
     try:
-        response = requests.post(f"{AUTH_URL}/introspect", data={"token": token}, timeout=10)
+        response = requests.post(f"{AUTH_URL}/introspect", data={"token": token}, timeout=10, verify=False)
         if response.status_code == 200:
             claims = json.loads(response.text)
             logger.debug("Introspected token: " + str(claims))

@@ -8,6 +8,9 @@ from flask import Flask, request, jsonify, Response
 from requests.exceptions import ConnectionError, HTTPError, RequestException
 from werkzeug.exceptions import BadRequest, MethodNotAllowed
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 # Initialize Flask app
 app = Flask(__name__)
 
@@ -335,7 +338,8 @@ def forward_request(service_name: str, subpath: str) -> Response:
             headers=headers,
             cookies=request.cookies,
             allow_redirects=False,
-            timeout=10
+            timeout=10,
+            verify=False
         )
 
         # Remove unnecessary headers in the response

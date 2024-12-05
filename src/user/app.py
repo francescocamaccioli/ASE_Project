@@ -8,7 +8,8 @@ from datetime import datetime
 import json
 import logging
 
-
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)

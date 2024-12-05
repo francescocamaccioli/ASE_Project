@@ -38,7 +38,7 @@ jobs:
         run: |
           curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
           postman login --with-api-key ${{ secrets.POSTMAN_AK2 }}
-          postman collection run 26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3 -e 26720283-035d030c-9e92-4a67-a691-b1048e5a6dcb
+          postman collection run 26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3 -e 39572593-8bfb337c-8e52-45f6-8649-a6d452382c62
 
 
 

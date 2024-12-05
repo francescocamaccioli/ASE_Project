@@ -7,6 +7,9 @@ from requests.exceptions import ConnectionError, HTTPError, RequestException
 from werkzeug.exceptions import BadRequest, MethodNotAllowed
 from auth_utils import *
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 # Initialize Flask app
 app = Flask(__name__)
 
@@ -59,7 +62,8 @@ def forward_request(service_name: str, subpath: str) -> Response:
             headers=headers,
             cookies=request.cookies,
             allow_redirects=False,
-            timeout=10  # you can adjust the timeout as needed
+            timeout=10,  # you can adjust the timeout as needed
+            verify=False
         )
 
         # Prepare the response to return to the client

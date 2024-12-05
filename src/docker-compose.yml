@@ -50,10 +50,10 @@ services:
       <<: *common-env
       AUTH_DB_URL: auth-db:27017
       AUTH_DB_NAME: auth_db
-      JWT_SECRET: supersecret # TODO: usare i segreti di docker come visto in lab?
     secrets:
       - auth_cert
       - auth_key
+      - JWT_SECRET
 
   auth-db:
     image: mongo:latest
@@ -170,6 +170,7 @@ volumes:
   redis-data:
 
 secrets:
+
   gateway_cert:
     file: ./gateway/localhost_cert.pem
   gateway_key:
@@ -180,6 +181,8 @@ secrets:
   admin_gateway_key:
     file: ./admin-gateway/localhost_key.pem
 
+  JWT_SECRET: 
+    file: ./auth/jwt_secret.txt
   auth_cert:
     file: ./auth/localhost_cert.pem
   auth_key:

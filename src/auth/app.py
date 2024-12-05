@@ -27,9 +27,7 @@ TOKEN_EXPIRATION_MINUTES = 30
 AUTH_DB_URL = os.getenv("AUTH_DB_URL")
 AUTH_DB_NAME = os.getenv("AUTH_DB_NAME")
 USER_URL = os.getenv("USER_URL")
-JWT_SECRET = os.getenv("JWT_SECRET")
-
-
+JWT_SECRET = open('/run/secrets/JWT_SECRET').read().strip()
 
 # Initializations
 app = Flask(__name__)

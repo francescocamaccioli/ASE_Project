@@ -37,7 +37,6 @@ def introspect_token(token):
         logger.error("Request to introspect token timed out")
         raise ValueError("Request to introspect token timed out")
 
-
 def role_required(*required_roles):
     """Decorator to check if the user has the required roles."""
     def decorator(f):

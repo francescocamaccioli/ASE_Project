@@ -28,7 +28,7 @@ def introspect_token(token):
             logger.debug("Introspected token: " + str(claims))
             return claims
         elif response.status_code == 401:
-            logger.warning("The server returned 401 while introspecting the token" + json.loads(response.text).get("error", "Unknown error"))
+            logger.warning("The server returned 401 while introspecting the token" + response.text)
             raise ValueError("Invalid token: " + json.loads(response.text).get("error", "Unknown error"))
         else:
             logger.error("The server responded with an unexpected status code " + str(response.status_code) + " while introspecting the token: " + json.loads(response.text).get("error", "Unknown error"))

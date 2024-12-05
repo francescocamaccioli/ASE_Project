@@ -18,6 +18,9 @@ logger = logging.getLogger(__name__)
 
 AUTH_URL = getenv("AUTH_URL")
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 def introspect_token(token):
     """Introspect the token using the /auth/introspect endpoint."""
 
@@ -86,4 +89,3 @@ def get_userID_from_jwt():
         logger.error("Error while getting the userID. " + str(e))
         return jsonify({"error": "Error while getting the userID. " + e}), 401
     return userID
-    

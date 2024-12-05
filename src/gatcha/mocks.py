@@ -1,5 +1,6 @@
 from unittest.mock import patch
 import requests
+from functools import wraps
 
 def mock_requests():
     """
@@ -27,23 +28,32 @@ def mock_requests():
 
     def handle_post_request(url, json_body):
         """
-        Handle POST requests and return mock responses based on the URL and request body.
+        INSERIRE LE RISPOSTE MOCK PER LE CHIAMATE POST QUI
         """
         if url == "http://service1/api/resource":
             if json_body == {"key": "value"}:
                 return MockResponse({"data": "response from service 1 with correct body"}, 200)
             else:
                 return MockResponse({"error": "Incorrect body"}, 400)
-        elif url == "http://service2/api/resource":
-            if json_body == {"key": "value"}:
-                return MockResponse({"data": "response from service 2 with correct body"}, 200)
-            else:
-                return MockResponse({"error": "Incorrect body"}, 400)
+        elif url.endswith("/decrease_balance"):
+                return MockResponse({"message": "Balance updated successfully"}, 200)
+        elif url.endswith("/add_gatcha"):
+                return MockResponse({"message": "Gatcha added successfully"}, 200)
+            
         return MockResponse({"error": "Not Found"}, 404)
 
     # Patch the 'requests.request' method with our mock_request function
     patcher = patch('requests.request', mock_request)
     patcher.start()
+
+
+
+def fake_get_userID_from_jwt():
+    """
+    A fake implementation of the get_userID_from_jwt function that returns a predefined user ID.
+    """
+    return "1234567890"
+
 
 class MockResponse:
     """
@@ -59,10 +69,13 @@ class MockResponse:
     def status_code(self):
         return self.status_code
 
-def no_op_decorator(f):
+def no_op_decorator(*required_roles):
     """
     A no-op decorator that does nothing, used to override real decorators in unit tests.
     """
-    def wrapped(*args, **kwargs):
-        return f(*args, **kwargs)
-    return wrapped
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator

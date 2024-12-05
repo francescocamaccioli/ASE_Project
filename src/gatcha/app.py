@@ -25,6 +25,21 @@ from rich.traceback import install
 install(show_locals=True)
 
 
+app = Flask(__name__, instance_relative_config=True)
+
+
+UNIT_TEST_MODE = os.getenv('UNIT_TEST_MODE', 'False') == 'True'
+
+if UNIT_TEST_MODE:
+    app.logger.info("Running in unit test mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    from mocks import mock_requests, no_op_decorator, fake_get_userID_from_jwt # mocks.py in the same folder
+    mock_requests() # after calling this function, the requests are now mocked: they answer with the mocks defined inside app.py
+    role_required = no_op_decorator # override the role_required decorator to do nothing
+    get_userID_from_jwt = fake_get_userID_from_jwt # override the get_userID_from_jwt function to return a predefined user ID
+else :
+    app.logger.info("Running in normal mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
+
 # region initializing vars ----------------------------------------
 
 USERL_URL = os.getenv('USER_URL')
@@ -125,11 +140,6 @@ GATCHA_COLLECTION_NAME = 'gatchas'
 
 mongo_client = MongoClient(GATCHA_DATABASE_URL, 27017, maxPoolSize=50)
 db = mongo_client[DATABASE_NAME]
-
-
-
-
-app = Flask(__name__, instance_relative_config=True)
 
 
 
@@ -289,14 +299,6 @@ def roll_gatcha():
         # Gestisci l'eventualità che non ci sia un gatcha di quella rarità
         if not gatcha:
             return make_response(f"No gatcha found for rarity {selected_rarity}\n", 404)
-      
-        response = requests.post(USERL_URL + "/decrease_balance", json={"userID": userID, "amount": ROLL_PRICE}, verify=False, timeout=10)
-
-        # Increment NTot for the selected gatcha
-        db[GATCHA_COLLECTION_NAME].update_one(
-            {'_id': gatcha['_id']},  # Trova il gatcha tramite il suo ID
-            {'$inc': {'NTot': 1}}       # Incrementa il campo NTot di 1
-        )
         
         response = requests.post(USERL_URL + "/decrease_balance", json={"userID": userID, "amount": ROLL_PRICE}, verify=False, timeout=10)
         if response.status_code != 200:

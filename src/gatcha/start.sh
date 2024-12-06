@@ -6,7 +6,7 @@ flask run --host=0.0.0.0 --port=5000 --debug --cert=/run/secrets/gatcha_cert --k
 FLASK_PID=$!
 
 
-sleep 3
+sleep 8
 
 
 python bootstrap.py

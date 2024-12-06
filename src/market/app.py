@@ -70,7 +70,7 @@ def add_auction():
             timeout=10
         )
         if response.status_code != 200:
-            return str(response)
+            return make_response(jsonify({"error": "Gatcha not owned"}), 400)
         
         Auctions.insert_one(auction)
 

@@ -26,7 +26,19 @@ Auctions = db_market["Auctions"]
 scheduler = BackgroundScheduler()
 scheduler.start()
 
-app = Flask(__name__)
+app = Flask(__name__, instance_relative_config=True)
+
+
+UNIT_TEST_MODE = os.getenv('UNIT_TEST_MODE', 'False') == 'True'
+
+if UNIT_TEST_MODE:
+    app.logger.info("Running in unit test mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    from mocks import start_mocking_http_requests, no_op_decorator, fake_get_userID_from_jwt # mocks.py in the same folder
+    start_mocking_http_requests() # after calling this function, the requests are now mocked: they answer with the mocks defined inside app.py
+    role_required = no_op_decorator # override the role_required decorator to do nothing
+    get_userID_from_jwt = fake_get_userID_from_jwt # override the get_userID_from_jwt function to return a predefined user ID
+else :
+    app.logger.info("Running in normal mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
 @app.route('/add-auction', methods=['POST'])
 @role_required('normalUser')
@@ -37,6 +49,8 @@ def add_auction():
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 401)
     
+    if data.get("starting_price") is None or data.get("Gatcha_ID") is None:
+        return make_response(jsonify({"error": "Gatcha_ID and starting_price are required"}), 400)
     
     auction = {
         "Auction_ID": Auctions.count_documents({}) + 1, # TODO: maybe add hash here (?)
@@ -170,6 +184,12 @@ def bid():
         userID = get_userID_from_jwt()
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 401)
+    if data.get("Auction_ID") is None or data.get("amount") is None:
+        return make_response(jsonify({"error": "Auction_ID and amount are required"}), 400)
+    
+    if data.get("amount") <= 0:
+        return make_response(jsonify({"error": "Bid amount must be positive"}), 400)
+    
     bid = {
         "Bid_ID": Bids.count_documents({}) + 1,
         "Auction_ID": data.get("Auction_ID"),

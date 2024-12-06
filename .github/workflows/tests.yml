@@ -83,12 +83,14 @@ jobs:
 
   user-service-isolation-tests:
     name: User service isolation tests
+
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Build and run the whole system using Docker Compose
+
         run: docker compose -f src/user/docker-compose.yml up -d
 
       - name: Run the Postman tests
@@ -98,6 +100,35 @@ jobs:
           curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
           postman login --with-api-key ${{ secrets.POSTMAN_AK2 }}
           postman collection run 40249701-5c01fd1f-792e-46a1-8fd8-c61910ac311a -e 39572593-8bfb337c-8e52-45f6-8649-a6d452382c62 --insecure
+
+
+      - name: Output Docker Compose logs
+        if: always()
+        run: docker compose -f src/docker-compose.yml logs
+
+      - name: Stop Docker Compose
+
+        run: docker compose -f src/docker-compose.yml down
+       
+  market-service-isolation-tests:
+    name: Market service isolation tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and run the whole system using Docker Compose
+        run: docker compose -f src/market/docker-compose.yml up -d
+
+      - name: Run the Postman tests
+        # questo comando scarica la collection e l'environment direttamente da Postman, senza che noi dobbiamo scaricarli
+        # COLLEZIONE CON I TEST DI ISOLAMENTO PER IL SERVIZIO GATCHA E BASTA
+        run: |
+          curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+          postman login --with-api-key ${{ secrets.POSTMAN_AK2 }}
+          postman collection run 39902012-f0be4f9f-3406-4e2c-bee6-0e1267bbae5d -e 39572593-8bfb337c-8e52-45f6-8649-a6d452382c62 --insecure
+
+
 
       - name: Output Docker Compose logs
         if: always()

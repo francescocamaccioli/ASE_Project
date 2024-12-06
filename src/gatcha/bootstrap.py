@@ -2,6 +2,9 @@ import requests
 import json
 import os
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 STATE_FILE = './already_bootstrapped.txt'
 
 def send_request(url, name, rarity, file_path):
@@ -26,7 +29,7 @@ def main():
         print("Bootstrap has already been executed. Exiting.")
         return
 
-    url = "https://127.0.0.1:5000/gatchas/initialization"
+    url = "https://127.0.0.1:5000/gatchas"
     
     objects = [
         {"name": "ARTPOP - 2019 Reissue", "rarity": "comune", "file_path": './testimg/common/artpop-vinyl-reissue-4_orig.png'},

@@ -1,0 +1,46 @@
+# Definisce un campo di estensione
+# serve per evitare di ripetere le stesse variabili in più servizi, senza dover fare copia-incolla
+x-common-environment:
+  &common-env
+  GATCHA_URL: https://gatcha:5000
+  USER_URL: https://user:5000
+  MARKET_URL: https://market:5000
+  AUTH_URL: https://auth:5000
+
+services:
+
+  # User Service
+  user:
+    build: .
+    container_name: user-container-isolation
+    ports:
+      - "5010:5000"
+    depends_on:
+      - db-user
+    environment:
+      <<: *common-env
+      UNIT_TEST_MODE: "True"
+    secrets:
+      - user_cert
+      - user_key
+
+  # MongoDB for user (Database per il servizio User)
+  db-user:
+    image: mongo:latest
+    container_name: db-user-isolation
+    # ports:
+    #   - "27018:27017"
+    volumes:
+      - dbdata-user:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: user_db  # Nome del database per gli utenti
+    command: mongod --quiet --logpath /var/log/mongodb/mongod.log  # Avvia MongoDB con log minimizzati
+
+volumes:
+  dbdata-user:
+
+secrets:
+  user_cert:
+    file: ./localhost_cert.pem
+  user_key:
+    file: ./localhost_key.pem

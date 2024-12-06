@@ -1,16 +1,17 @@
 <?php
-$GATEWAY_URL = 'https://gateway:5000';
+$GATEWAY_URL_INSIDE_CONTAINER = 'https://gateway:5000';
+$GATEWAY_URL_OUTSIDE_CONTAINER = 'https://localhost:5001';
 
 // Start session to store user data
 session_start();
 
 // Function to perform API calls
 function api_call($method, $url, $data = null) {
-    global $GATEWAY_URL;
+    global $GATEWAY_URL_INSIDE_CONTAINER;
     $curl = curl_init();
 
     // Set options
-    curl_setopt($curl, CURLOPT_URL, $GATEWAY_URL . $url);
+    curl_setopt($curl, CURLOPT_URL, $GATEWAY_URL_INSIDE_CONTAINER . $url);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
 
     // Suppress SSL certificate verification
@@ -26,7 +27,7 @@ function api_call($method, $url, $data = null) {
             break;
         case 'GET':
             if ($data)
-                curl_setopt($curl, CURLOPT_URL, $GATEWAY_URL . $url . '?' . http_build_query($data));
+                curl_setopt($curl, CURLOPT_URL, $GATEWAY_URL_INSIDE_CONTAINER . $url . '?' . http_build_query($data));
             break;
     }
 
@@ -46,6 +47,13 @@ function api_call($method, $url, $data = null) {
     return json_decode($result, true);
 }
 
+// Handle logout
+if (isset($_POST['logout'])) {
+    session_destroy();
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+}
+
 // Handle login
 if (isset($_POST['login'])) {
     $username = $_POST['username'];
@@ -56,8 +64,9 @@ if (isset($_POST['login'])) {
         'password' => $password
     ]);
 
-    if (isset($response['token'])) {
-        $_SESSION['token'] = $response['token'];
+    if (isset($response['access_token']) && isset($response['userID'])) {
+        $_SESSION['token'] = $response['access_token'];
+        $_SESSION['userID'] = $response['userID'];
     } else {
         $error = $response['error'] ?? 'Login failed';
     }
@@ -84,7 +93,10 @@ if (isset($_POST['register'])) {
 
 // Handle increase balance
 if (isset($_POST['increase_balance'])) {
-    $response = api_call('POST', '/user/increase_balance');
+    $response = api_call('POST', '/user/increase_balance', [
+        'userID' => $_SESSION['userID'],
+        'amount' => 500
+    ]);
 }
 
 // Handle roll gatcha
@@ -95,35 +107,29 @@ if (isset($_POST['roll_gatcha'])) {
 
 // Fetch user info
 if (isset($_SESSION['token'])) {
-    $user_data = api_call('GET', '/user/info');
+    $user_data = api_call('GET', '/user/users/' . $_SESSION['userID']);
     $balance = $user_data['balance'] ?? 0;
 
     // Fetch gatcha collection
     $gatcha_data = api_call('GET', '/gatcha/gatchas');
 
     // Fetch user's gatchas
-    $user_gatcha_data = api_call('GET', '/user/my_gatcha');
+    $user_gatcha_data = api_call('GET', '/user/collection');
+    $user_gatcha_ids =$user_gatcha_data;
 }
 ?>
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<link
+  rel="stylesheet"
+  href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+>
 <head>
-    <title>Gatcha GUI</title>
-    <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
-    >
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard</title>
     <style>
-        .grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        .card {
-            width: 200px;
-            padding: 1rem;
-            border: 1px solid #ccc;
-        }
         img {
             max-width: 100%;
         }
@@ -138,24 +144,48 @@ if (isset($_SESSION['token'])) {
 <body>
 <main class="container">
     <?php if (!isset($_SESSION['token'])): ?>
-        <h1>Login</h1>
-        <?php if (isset($error)): ?>
-            <p style="color:red;"><?php echo htmlspecialchars($error); ?></p>
-        <?php endif; ?>
-        <form method="post">
-            <label for="username">Username</label>
-            <input type="text" name="username" required>
-            <label for="password">Password</label>
-            <input type="password" name="password" required>
-            <button type="submit" name="login" class="contrast">Login</button>
-        </form>
+        <h1>Home</h1>
+        <div style="display: flex; justify-content: space-around;">
+            <div>
+                <h2>Login</h2>
+                <?php if (isset($error) && !isset($_POST['register'])): ?>
+                    <p style="color:red;"><?php echo htmlspecialchars($error); ?></p>
+                <?php endif; ?>
+                <form method="post">
+                    <label for="username">Username</label>
+                    <input type="text" name="username" required>
+                    <label for="password">Password</label>
+                    <input type="password" name="password" required>
+                    <button type="submit" name="login" class="contrast">Login</button>
+                </form>
+            </div>
+            <div>
+                <h2>Register</h2>
+                <?php if (isset($register_message)): ?>
+                    <p style="color:green;"><?php echo htmlspecialchars($register_message); ?></p>
+                <?php endif; ?>
+                <?php if (isset($error) && isset($_POST['register'])): ?>
+                    <p style="color:red;"><?php echo htmlspecialchars($error); ?></p>
+                <?php endif; ?>
+                <form method="post">
+                    <label for="username">Username</label>
+                    <input type="text" name="username" required>
+                    <label for="password">Password</label>
+                    <input type="password" name="password" required>
+                    <label for="email">Email</label>
+                    <input type="email" name="email" required>
+                    <button type="submit" name="register" class="contrast">Register</button>
+                </form>
+            </div>
+        </div>
     <?php else: ?>
         <h1>Welcome, <?php echo htmlspecialchars($user_data['username'] ?? 'User'); ?></h1>
-        <p>UUID: <?php echo htmlspecialchars($user_data['_id'] ?? 'N/A'); ?></p>
+        <p>UUID: <?php echo htmlspecialchars($_SESSION['userID'] ?? 'N/A'); ?></p>
         <p>Balance: <?php echo htmlspecialchars($balance); ?></p>
         <form method="post">
             <button type="submit" name="increase_balance">Increase Balance</button>
             <button type="submit" name="roll_gatcha">Roll Gatcha</button>
+            <button type="submit" name="logout">Logout</button>
         </form>
         <?php if (isset($roll_message)): ?>
             <p><?php echo htmlspecialchars($roll_message); ?></p>
@@ -165,7 +195,7 @@ if (isset($_SESSION['token'])) {
         <div class="grid">
             <?php foreach ($gatcha_data as $gatcha): ?>
                 <div class="card">
-                    <img src="<?php echo htmlspecialchars($GATEWAY_URL . $gatcha['image']); ?>" alt="<?php echo htmlspecialchars($gatcha['name']); ?>">
+                    <img src="<?php echo htmlspecialchars($GATEWAY_URL_OUTSIDE_CONTAINER . $gatcha['image']); ?>" alt="<?php echo htmlspecialchars($gatcha['name']); ?>">
                     <h3><?php echo htmlspecialchars($gatcha['name']); ?></h3>
                     <p>Rarity: <?php echo htmlspecialchars($gatcha['rarity']); ?></p>
                     <p>Gatcha ID: <?php echo htmlspecialchars($gatcha['_id']); ?></p>

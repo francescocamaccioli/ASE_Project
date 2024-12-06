@@ -1,0 +1,58 @@
+# Definisce un campo di estensione
+# serve per evitare di ripetere le stesse variabili in più servizi, senza dover fare copia-incolla
+x-common-environment:
+  &common-env
+  GATCHA_URL: https://gatcha:5000
+  USER_URL: https://user:5000
+  MARKET_URL: https://market:5000
+  AUTH_URL: https://auth:5000
+
+services:
+
+  auth:
+    build: .
+    ports:
+      - "5005:5000"
+    depends_on:
+      - auth-db
+      - redis
+    environment:
+      <<: *common-env
+      AUTH_DB_URL: auth-db:27017
+      AUTH_DB_NAME: auth_db
+      UNIT_TEST_MODE: "True" # IMPORTANT: THIS MUST BE SET TO "True" FOR UNIT TESTING
+    secrets:
+      - auth_cert
+      - auth_key
+      - JWT_SECRET
+
+  auth-db:
+    image: mongo:latest
+    # ports:
+    #   - "27016:27017"  # è esposta solo per debugging, da commentare in produzione.
+    volumes:
+      - dbdata-auth:/data/db
+    environment:
+      MONGO_INITDB_DATABASE: auth_db  # Nome del database per l'autenticazione
+    command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+
+volumes:
+  dbdata-auth: # Volume per db-auth
+  redis-data:
+
+secrets:
+
+  JWT_SECRET: 
+    file: ./jwt_secret.txt
+  auth_cert:
+    file: ./localhost_cert.pem
+  auth_key:
+    file: ./localhost_key.pem

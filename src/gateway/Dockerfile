@@ -20,4 +20,4 @@ COPY . /app
 EXPOSE 5000
 
 # Comando di esecuzione dell'applicazione
-CMD flask run --host=0.0.0.0 --port=5000 --debug --cert=/run/secrets/gateway_cert --key=/run/secrets/gateway_key
+CMD flask run --host=0.0.0.0 --port=5000 --debug 

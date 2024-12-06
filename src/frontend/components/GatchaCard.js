@@ -1,7 +1,7 @@
 'use client';
 
 export default function GatchaCard({ gatcha, owned }) {
-  const imageUrl = `https://localhost:5001${gatcha.image}`;
+  const imageUrl = `http://localhost:5001${gatcha.image}`;
 
   return (
     <div className="p-4 border">

@@ -9,15 +9,15 @@ x-common-environment:
 
 services:
 
-  # Next.js Service
-  nextjs:
-    build: ./nextjs
-    ports:
-      - "3000:3000"
-    depends_on:
-      - gateway
-    environment:
-      GATEWAY_URL: https://localhost:5001
+  # # Next.js Service
+  # nextjs:
+  #   build: ./nextjs
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - gateway
+  #   environment:
+  #     GATEWAY_URL: https://localhost:5001
 
   # Gateway Service
   gateway:

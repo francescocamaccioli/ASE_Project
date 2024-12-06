@@ -15,28 +15,28 @@ export default function Collection() {
       if (!token) return;
 
       // Fetch all gatchas
-      const resGatchas = await fetch('https://localhost:5001/gatcha/gatchas', {
+      const resGatchas = await fetch('http://localhost:5001/gatcha/gatchas', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const gatchasData = await resGatchas.json();
       setGatchas(gatchasData);
 
       // Fetch user collection
-      const resCollection = await fetch('https://localhost:5001/user/collection', {
+      const resCollection = await fetch('http://localhost:5001/user/collection', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const collectionData = await resCollection.json();
       setUserCollection(collectionData);
 
       // Fetch user balance
-      const resBalance = await fetch('https://localhost:5001/user/balance', {
+      const resBalance = await fetch('http://localhost:5001/user/balance', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const balanceData = await resBalance.json();
       setBalance(balanceData.balance);
 
       // Fetch user info
-      const resUserInfo = await fetch('https://localhost:5001/auth/userinfo', {
+      const resUserInfo = await fetch('http://localhost:5001/auth/userinfo', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const userInfoData = await resUserInfo.json();
@@ -50,7 +50,7 @@ export default function Collection() {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    await fetch('https://localhost:5001/user/increase_balance', {
+    await fetch('http://localhost:5001/user/increase_balance', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -60,7 +60,7 @@ export default function Collection() {
     });
 
     // Update balance
-    const resBalance = await fetch('https://localhost:5001/user/balance', {
+    const resBalance = await fetch('http://localhost:5001/user/balance', {
       headers: { Authorization: `Bearer ${token}` },
     });
     const balanceData = await resBalance.json();

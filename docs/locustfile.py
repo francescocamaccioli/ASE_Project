@@ -287,6 +287,20 @@ class GachaUser(FastHttpUser):
     @task(1)
     def get_auction(self):
         """Get details of a specific auction."""
+        # update auction_ids list
+        """Get all active auctions."""
+        response = self.client.get("/market/auctions", headers=self.headers, verify=False)
+        if response.status_code == 200:
+            auctions = response.json()  # Assuming the response is a list
+            with GachaUser.auction_ids_lock:
+                GachaUser.auction_ids.clear()
+                GachaUser.auction_details.clear()
+                GachaUser.auction_ids.extend([auction["Auction_ID"] for auction in auctions])
+                GachaUser.auction_details.update({auction["Auction_ID"]: auction for auction in auctions})
+            logger.info(f"{self.username} retrieved all active auctions.")
+        else:
+            logger.error(f"Failed to retrieve all active auctions for {self.username}: {response.status_code} - {response.text}")
+       
         with GachaUser.auction_ids_lock:
             if GachaUser.auction_ids:
                 auction_id = random.choice(GachaUser.auction_ids)

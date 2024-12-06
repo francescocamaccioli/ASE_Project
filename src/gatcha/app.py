@@ -28,19 +28,8 @@ install(show_locals=True)
 app = Flask(__name__, instance_relative_config=True)
 
 
-UNIT_TEST_MODE = os.getenv('UNIT_TEST_MODE', 'False') == 'True'
 
-if UNIT_TEST_MODE:
-    app.logger.info("Running in unit test mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-    from mocks import start_mocking_http_requests, no_op_decorator, fake_get_userID_from_jwt # mocks.py in the same folder
-    start_mocking_http_requests() # after calling this function, the requests are now mocked: they answer with the mocks defined inside app.py
-    role_required = no_op_decorator # override the role_required decorator to do nothing
-    get_userID_from_jwt = fake_get_userID_from_jwt # override the get_userID_from_jwt function to return a predefined user ID
-else :
-    app.logger.info("Running in normal mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-
-
-# region initializing vars ----------------------------------------
+# region initializing vars
 
 USERL_URL = os.getenv('USER_URL')
 
@@ -80,13 +69,30 @@ validate_env_vars(
     MINIO_STORAGE_BUCKET_NAME=MINIO_STORAGE_BUCKET_NAME,
     GATCHA_DATABASE_URL=GATCHA_DATABASE_URL
 )
-# endregion initializing vars ----------------------------------------
+# endregion initializing vars
+
+
+
+# region unit test mode
+UNIT_TEST_MODE = os.getenv('UNIT_TEST_MODE', 'False') == 'True'
+
+if UNIT_TEST_MODE:
+    app.logger.info("Running in unit test mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    from mocks import start_mocking_http_requests, no_op_decorator, fake_get_userID_from_jwt # importing mocks.py from the same folder
+    start_mocking_http_requests() # after calling this function, the requests are now mocked: they answer with the mocks defined inside app.py
+    role_required = no_op_decorator # override the role_required decorator to do nothing
+    get_userID_from_jwt = fake_get_userID_from_jwt # override the get_userID_from_jwt function to return a predefined user ID
+else :
+    app.logger.info("Running in normal mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+# endregion unit test mode
 
 
 
 
 
-# region configuring MinIO ----------------------------------------
+
+
+# region configuring MinIO
 
 # Configure S3 client
 minio_client = Minio(MINIO_STORAGE_URL,
@@ -129,100 +135,38 @@ try:
     create_bucket(MINIO_STORAGE_BUCKET_NAME)
 except S3Error as e:
     print("Error while creating the bucker", e)
-# endregion configuring MinIO  ----------------------------------------
+# endregion configuring MinIO
 
 
 
 
-# Connessione ai database dei microservizi (modificato per usare i container MongoDB tramite nome servizio)
+
+# Connessione ai database dei microservizi
+# region database connection
 DATABASE_NAME = 'gatcha_db'
 GATCHA_COLLECTION_NAME = 'gatchas'
 
 mongo_client = MongoClient(GATCHA_DATABASE_URL, 27017, maxPoolSize=50)
 db = mongo_client[DATABASE_NAME]
+# endregion database connection
 
 
 
 
-# region utility functions ----------------------------------------
-
+# region utility functions
 def weighted_random_choice(rarities):
     # Selects a rarity based on the predefined probabilities.
     rarity_list = list(rarities.keys())
     probability_list = list(rarities.values())
     return random.choices(rarity_list, probability_list, k=1)[0]
+# endregion utility functions
 
 
-# endregion utility functions ----------------------------------------
-@app.route('/gatchas/initialization', methods=['POST']) #Non visibile esternamente, usato per aggiungere gatcha all'inizio
-def initialize_gatchas():
-    """
-    Used to insert the gatchas in the DB at the beginning of the game. The endpoint is not visible to the users but it's only used the bootstrap.py script.
-    """
-    
-    if 'file' not in request.files or 'json' not in request.form:
-        return make_response(json_util.dumps({"error": "Both image file and JSON payload are required, as a multipart request."}), 400)
 
-    file = request.files['file']
 
-    if file.filename == '':
-        return make_response(json_util.dumps({"error": "No image file uploaded"}), 400)
-    
-    gatcha_uuid = uuid.uuid4().hex
 
-    filename = secure_filename(file.filename)
-    filename = f"{gatcha_uuid}_{filename}" # create a unique filename
-    destination_file_path = f"images/{filename}"
-
-    # Upload the file to MinIO bucket and get the image_url
-    try:
-        # Save the file to a temporary location
-        temp_file_path = os.path.join('/tmp', filename)
-        file.save(temp_file_path)
-
-        # Upload the file to MinIO
-        minio_client.fput_object(
-            bucket_name=MINIO_STORAGE_BUCKET_NAME, 
-            object_name=destination_file_path, 
-            file_path=temp_file_path,
-            content_type=file.content_type
-        )
-        print(
-            f"File '{file.filename}' successfully uploaded as '{destination_file_path}' to bucket '{MINIO_STORAGE_BUCKET_NAME}'"
-        )
-        image_url = f"/storage/{MINIO_STORAGE_BUCKET_NAME}/images/{filename}"
-    except Exception as e:
-        app.logger.error(f"Failed to upload image: {str(e)}")
-        return make_response(json_util.dumps({"error": "Failed to upload image"}), 500)
-    finally:
-        # Clean up the temporary file
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
-
-    # take the JSON from the request, and add the image URL we just defined to it
-    try:
-        data = json_util.loads(request.form.get('json'))
-    except Exception as e:
-        return make_response(json_util.dumps({"error": "Invalid JSON format provided"}), 400)
-
-    data['image'] = image_url
-    data["_id"] = gatcha_uuid
-    data["NTot"] = 0
-
-    # insert the data into the database
-    try:
-        db[GATCHA_COLLECTION_NAME].insert_one(data)
-        
-        response = make_response(json_util.dumps({"message": "Data with image added to gatcha_db", "data": data}), 200)
-        response.headers['Content-Type'] = 'application/json'
-        return response
-    except Exception as e:
-        return make_response(json_util.dumps({"error": f"Database insert failed: {str(e)}"}), 500)
-
-   
 # Endpoint per aggiungere dati nel database gacha_db
 @app.route('/gatchas', methods=['POST'])
-@role_required('adminUser')
 def add_gatcha_data():
     """
     Admins can use this endpoint to add a new gatcha to the database.

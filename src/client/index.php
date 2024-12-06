@@ -1,6 +1,6 @@
 <?php
 $GATEWAY_URL_INSIDE_CONTAINER = 'https://gateway:5000';
-$GATEWAY_URL_OUTSIDE_CONTAINER = 'https://localhost:5001';
+//$GATEWAY_URL_OUTSIDE_CONTAINER = 'https://localhost:5001';
 
 // Start session to store user data
 session_start();
@@ -111,13 +111,14 @@ if (isset($_POST['roll_gatcha'])) {
     $name = $response['gatcha']['name'];
     $rarity = $response['gatcha']['rarity'];
     $image = $response['gatcha']['image'];
+    $imageUrl = "proxy.php?url=" . urlencode($GATEWAY_URL_INSIDE_CONTAINER . $image);
 
     echo "<script>
         document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 title: 'Congratulations!',
                 text: 'You rolled a " . htmlspecialchars($name) . " (" . htmlspecialchars($rarity) . ")',
-                imageUrl: '" . htmlspecialchars($GATEWAY_URL_OUTSIDE_CONTAINER . $image) . "',
+                imageUrl: '" . htmlspecialchars($imageUrl ) . "',
                 imageWidth: 400,
                 imageHeight: 200,
                 imageAlt: 'Gatcha Image',
@@ -202,10 +203,10 @@ if (isset($_SESSION['token'])) {
         </div>
     <?php else: ?>
         <h1>Welcome to <b>Lady Gatcha</b></h1>
-        <p>UUID: <?php echo htmlspecialchars($_SESSION['userID'] ?? 'N/A'); ?></p>
-        <p>Balance: <?php echo htmlspecialchars($balance); ?></p>
+        <p>User UUID: <?php echo htmlspecialchars($_SESSION['userID'] ?? 'N/A'); ?></p>
+        <p>Gagabucks Balance: <?php echo htmlspecialchars($balance); ?></p>
         <form method="post">
-            <button type="submit" name="increase_balance">Increase Balance</button>
+            <button type="submit" name="increase_balance">Increase Gagabucks Balance</button>
             <button type="submit" name="roll_gatcha">Roll Gatcha</button>
             <button type="submit" name="logout">Logout</button>
         </form>

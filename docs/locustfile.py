@@ -125,7 +125,7 @@ class GachaUser(FastHttpUser):
 
     # --- Gatcha Microservice Tasks ---
 
-    @task(5)
+    @task(2)
     def roll_gacha(self):
         """Simulate rolling the gacha."""
         if self.balance < 10:

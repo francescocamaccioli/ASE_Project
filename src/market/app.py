@@ -53,7 +53,7 @@ def add_auction():
         return make_response(jsonify({"error": "Gatcha_ID and starting_price are required"}), 400)
     
     auction = {
-        "Auction_ID": Auctions.count_documents({}) + 1, # TODO: maybe add hash here (?)
+        "Auction_ID": Auctions.count_documents({}) + 1,
         "Gatcha_ID": data.get("Gatcha_ID"),
         "Auctioner_ID": userID,
         "Winner_ID": "",

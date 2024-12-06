@@ -1,3 +1,3 @@
 .DS_Store
 /src/minio-storage/data-volume/
-src/__pycache__/locustfile.cpython-312.pyc
+__pycache__

@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
-  title: Microservices Project API
-  description: Comprehensive OpenAPI specification for the Microservices Project, including Authentication, User, Gatcha, Market services, API Gateway, and Admin Gateway.
+  title: Lady Gatcha API Specification
+  description: OpenAPI specification for the Advanced Software Engineering Project, including Authentication, User, Gatcha, Market microservices.
   version: 1.0.0
 servers:
   - url: https://api.yourdomain.com/
@@ -587,30 +587,6 @@ paths:
                 type: array
                 items:
                   type: string
-        '500':
-          description: Internal server error.
-
-  /user/collection/{gatcha_ID}:
-    get:
-      tags:
-        - User
-      summary: Get details of a specific gatcha in user's collection.
-      security:
-        - BearerAuth: []
-      parameters:
-        - in: path
-          name: gatcha_ID
-          schema:
-            type: string
-          required: true
-          description: Unique ID of the gatcha.
-      responses:
-        '200':
-          description: Gatcha details retrieved successfully.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Gatcha'
         '500':
           description: Internal server error.
           

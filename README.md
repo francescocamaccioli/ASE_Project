@@ -28,6 +28,7 @@ Advanced Software Engineering 24/25 Course Project
    newman run docs/integration-tests.postman_collection.json -e docs/localhost-ema-with-https.postman_environment.json --insecure
    ```
 
+5. Use the browser client on localhost:8080
 
 ## Isolation Testing
 
@@ -59,8 +60,6 @@ To test each microservice in isolation, run the following steps:
    newman run docs/isolation-market-service.postman_collection.json -e docs/localhost-ema-with-https.postman_environment.json --insecure
    newman run docs/isolation-user-service.postman_collection.json -e docs/localhost-ema-with-https.postman_environment.json --insecure
    ```
-
-5. Use the browser client on localhost:8080
 
 ## The /docs folder
 

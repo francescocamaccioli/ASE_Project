@@ -217,7 +217,7 @@ if (isset($_SESSION['token'])) {
         <div class="grid">
             <?php foreach ($gatcha_data as $gatcha): ?>
                 <div class="card">
-                    <img src="<?php echo htmlspecialchars($GATEWAY_URL_OUTSIDE_CONTAINER . $gatcha['image']); ?>" alt="<?php echo htmlspecialchars($gatcha['name']); ?>">
+                                        <img src="proxy.php?url=<?php echo urlencode($GATEWAY_URL_INSIDE_CONTAINER . $gatcha['image']); ?>" alt="<?php echo htmlspecialchars($gatcha['name']); ?>">
                     <h3><?php echo htmlspecialchars($gatcha['name']); ?></h3>
                     <p>Rarity: <?php echo htmlspecialchars($gatcha['rarity']); ?></p>
                     <p>Gatcha ID: <?php echo htmlspecialchars($gatcha['_id']); ?></p>

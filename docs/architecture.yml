@@ -1,20 +1,75 @@
 tosca_definitions_version: micro_tosca_yaml_1.1
-description: micro.tosca
+description: Lady Gatcha Architecture
 imports:
 - micro: https://di-unipi-socc.github.io/microTOSCA/1.1/microTOSCA.yaml
 topology_template:
   node_templates:
-    gateway:
+    Gateway:
+      type: micro.nodes.MessageRouter
+      requirements:
+      - interaction: Gatcha
+      - interaction: Auth
+      - interaction: Market
+      - interaction: User
+      - interaction: MinIO Service
+    Gatcha:
       type: micro.nodes.Service
       requirements:
-      - interaction: gatcha
-    gatcha:
+      - interaction:
+          node: User
+          relationship: t
+      - interaction: db-gatcha
+      - interaction:
+          node: MinIO Service
+          relationship: t
+    Auth:
       type: micro.nodes.Service
+      requirements:
+      - interaction: auth-db
+      - interaction:
+          node: User
+          relationship: t
+      - interaction: Redis
+    Market:
+      type: micro.nodes.Service
+      requirements:
+      - interaction: db-market
+      - interaction:
+          node: User
+          relationship: t
+    User:
+      type: micro.nodes.Service
+      requirements:
+      - interaction: db-user
+    Admin Gateway:
+      type: micro.nodes.MessageRouter
+      requirements:
+      - interaction: Gatcha
+      - interaction: Market
+      - interaction: Auth
+      - interaction: User
+    db-market:
+      type: micro.nodes.Datastore
+    db-user:
+      type: micro.nodes.Datastore
+    db-gatcha:
+      type: micro.nodes.Datastore
+    auth-db:
+      type: micro.nodes.Datastore
+    MinIO Service:
+      type: micro.nodes.Service
+      requirements:
+      - interaction: MinIO DB
+    MinIO DB:
+      type: micro.nodes.Datastore
+    Redis:
+      type: micro.nodes.Datastore
   groups:
     adad:
       type: micro.groups.Edge
       members:
-      - gateway
+      - Gateway
+      - Admin Gateway
   relationship_templates:
     t:
       type: micro.relationships.InteractsWith

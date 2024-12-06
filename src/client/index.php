@@ -280,15 +280,19 @@ if (isset($_SESSION['token'])) {
                 <?php foreach ($gatcha_data as $index => $gatcha): ?>
                     <article class="card">
                         <header>
-                            <img src="proxy.php?url=<?php echo urlencode($GATEWAY_URL_INSIDE_CONTAINER . $gatcha['image']); ?>" alt="<?php echo htmlspecialchars($gatcha['name']); ?>">
+                            <?php if (in_array($gatcha['_id'], $user_gatcha_ids)): ?>
+                                <img src="proxy.php?url=<?php echo urlencode($GATEWAY_URL_INSIDE_CONTAINER . $gatcha['image']); ?>" alt="<?php echo htmlspecialchars($gatcha['name']); ?>">
+                            <?php else: ?>
+                                <img src="/mistery.webp" alt="Mistery Gatcha">
+                            <?php endif; ?>
                             <h3><?php echo htmlspecialchars($gatcha['name']); ?></h3>
                         </header>
                         <p>Rarity: <?php echo htmlspecialchars($gatcha['rarity']); ?></p>
                         <p>Gatcha ID: <?php echo htmlspecialchars($gatcha['_id']); ?></p>
                         <?php if (in_array($gatcha['_id'], $user_gatcha_ids)): ?>
-                            <p class="owned">Owned</p>
+                            <p class="owned" style="color: #28a745; font-weight: bold;">🎉 You own this gatcha! 🎉</p>
                         <?php else: ?>
-                            <p class="not-owned">Not Owned</p>
+                            <p class="not-owned" style="color: #dc3545; font-weight: bold;">😢 Not in your collection yet! 😢</p>
                         <?php endif; ?>
                     </article>
                 <?php endforeach; ?>

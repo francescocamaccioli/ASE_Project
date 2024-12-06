@@ -30,12 +30,28 @@ USER_URL = os.getenv("USER_URL")
 JWT_SECRET = open('/run/secrets/JWT_SECRET').read().strip()
 
 # Initializations
-app = Flask(__name__)
+app = Flask(__name__, instance_relative_config=True)
 
 mongo_client = MongoClient(AUTH_DB_URL)
 auth_db= mongo_client[AUTH_DB_NAME]
 
 
+# region unit test mode
+UNIT_TEST_MODE = os.getenv('UNIT_TEST_MODE', 'False') == 'True'
+
+if UNIT_TEST_MODE:
+    app.logger.info("Running in unit test mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    from mocks import start_mocking_http_requests, no_op_decorator, fake_get_userID_from_jwt # importing mocks.py from the same folder
+    start_mocking_http_requests() # after calling this function, the requests are now mocked: they answer with the mocks defined inside app.py
+    role_required = no_op_decorator # override the role_required decorator to do nothing
+    get_userID_from_jwt = fake_get_userID_from_jwt # override the get_userID_from_jwt function to return a predefined user ID
+else :
+    app.logger.info("Running in normal mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+# endregion unit test mode
+
+
+
+# region adding a test user to the database
 # adding to the database a test admin user
 test_admin_pasword = "password123"
 test_admin_hashed_pasword = bcrypt.hashpw(test_admin_pasword.encode(), bcrypt.gensalt())
@@ -53,9 +69,8 @@ try:
         auth_db.users.insert_one(test_admin_user)
 except ServerSelectionTimeoutError:
     print("Could not connect to MongoDB server.")
+# endregion adding a test user to the database
 
-
-# region ROUTES DEFINITIONS -------------------------------
 
 
 @app.route('/register', methods=['POST'])
@@ -98,12 +113,12 @@ def register_user():
         if not re.match(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", payload['email']):
             return make_response(jsonify({"error": "Invalid email"}), 400)
         
-        auth_db.users.insert_one(user)
 
         response = requests.post(USER_URL+"/init-user", json={"userID": user["userID"]}, timeout=10, verify=False)
         if response.status_code != 201:
             return make_response(jsonify({"error": "Could not initialize user, problem with the user microservice"}), 502)
                     
+        auth_db.users.insert_one(user)
 
         
         return make_response(jsonify({"message": "User registered successfully"}), 200)
@@ -335,9 +350,6 @@ def revoke(token_id, exp):
 
 def is_token_revoked(token_id):
     return redis_client.exists(token_id) == 1
-
-
-# endregion ROUTES DEFINITIONS
 
 
 

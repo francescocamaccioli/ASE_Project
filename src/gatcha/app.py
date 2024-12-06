@@ -30,7 +30,6 @@ app = Flask(__name__, instance_relative_config=True)
 
 
 # region initializing vars
-
 USERL_URL = os.getenv('USER_URL')
 
 ROLL_PRICE = 10

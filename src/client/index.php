@@ -1,6 +1,7 @@
 <?php
 $GATEWAY_URL_INSIDE_CONTAINER = 'https://gateway:5000';
 //$GATEWAY_URL_OUTSIDE_CONTAINER = 'https://localhost:5001';
+$BALANCE_INCREASE_AMOUNT = 30;
 
 // Start session to store user data
 session_start();
@@ -95,7 +96,7 @@ if (isset($_POST['register'])) {
 if (isset($_POST['increase_balance'])) {
     $response = api_call('POST', '/user/increase_balance', [
         'userID' => $_SESSION['userID'],
-        'amount' => 500
+        'amount' => $BALANCE_INCREASE_AMOUNT
     ]);
 }
 
@@ -206,28 +207,30 @@ if (isset($_SESSION['token'])) {
         <p>User UUID: <?php echo htmlspecialchars($_SESSION['userID'] ?? 'N/A'); ?></p>
         <p>Gagabucks Balance: <?php echo htmlspecialchars($balance); ?></p>
         <form method="post">
-            <button type="submit" name="increase_balance">Increase Gagabucks Balance</button>
+            <button type="submit" name="increase_balance">Increase Balance +<?=$BALANCE_INCREASE_AMOUNT?></button>
             <button type="submit" name="roll_gatcha">Roll Gatcha</button>
             <button type="submit" name="logout">Logout</button>
         </form>
-        <?php if (isset($roll_message)): ?>
-            <p><?php echo htmlspecialchars($roll_message); ?></p>
-        <?php endif; ?>
 
         <h2>Your Gatcha Collection</h2>
-        <div class="grid">
-            <?php foreach ($gatcha_data as $gatcha): ?>
-                <div class="card">
-                                        <img src="proxy.php?url=<?php echo urlencode($GATEWAY_URL_INSIDE_CONTAINER . $gatcha['image']); ?>" alt="<?php echo htmlspecialchars($gatcha['name']); ?>">
-                    <h3><?php echo htmlspecialchars($gatcha['name']); ?></h3>
-                    <p>Rarity: <?php echo htmlspecialchars($gatcha['rarity']); ?></p>
-                    <p>Gatcha ID: <?php echo htmlspecialchars($gatcha['_id']); ?></p>
-                    <?php if (in_array($gatcha['_id'], $user_gatcha_ids)): ?>
-                        <p class="owned">Owned</p>
-                    <?php else: ?>
-                        <p class="not-owned">Not Owned</p>
-                    <?php endif; ?>
-                </div>
+        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+            <?php foreach ($gatcha_data as $index => $gatcha): ?>
+                <?php if ($index > 0 && $index % 5 == 0): ?>
+                    </div><div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                <?php endif; ?>
+            <article class="card">
+            <header>
+            <img src="proxy.php?url=<?php echo urlencode($GATEWAY_URL_INSIDE_CONTAINER . $gatcha['image']); ?>" alt="<?php echo htmlspecialchars($gatcha['name']); ?>">
+            <h3><?php echo htmlspecialchars($gatcha['name']); ?></h3>
+            </header>
+            <p>Rarity: <?php echo htmlspecialchars($gatcha['rarity']); ?></p>
+            <p>Gatcha ID: <?php echo htmlspecialchars($gatcha['_id']); ?></p>
+            <?php if (in_array($gatcha['_id'], $user_gatcha_ids)): ?>
+            <p class="owned">Owned</p>
+            <?php else: ?>
+            <p class="not-owned">Not Owned</p>
+            <?php endif; ?>
+            </article>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>

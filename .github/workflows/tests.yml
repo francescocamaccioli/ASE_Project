@@ -96,7 +96,7 @@ jobs:
         # COLLEZIONE CON I TEST DI ISOLAMENTO PER IL SERVIZIO GATCHA E BASTA
         run: |
           curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
-          postman login --with-api-key {{postman-api-key-here}}
+          postman login --with-api-key ${{ secrets.POSTMAN_AK2 }}
           postman collection run 39902012-f0be4f9f-3406-4e2c-bee6-0e1267bbae5d -e 39572593-8bfb337c-8e52-45f6-8649-a6d452382c62 --insecure
 
 

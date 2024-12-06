@@ -45,7 +45,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "./test.jpg"
+							"src": "./docs/test.jpg"
 						},
 						{
 							"key": "json",
@@ -104,7 +104,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "./test.jpg"
+							"src": "./docs/test.jpg"
 						},
 						{
 							"key": "json",
@@ -165,7 +165,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "./test.jpg"
+							"src": "./docs/test.jpg"
 						},
 						{
 							"key": "json",
@@ -228,7 +228,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "./test.jpg"
+							"src": "./docs/test.jpg"
 						},
 						{
 							"key": "json",
@@ -290,7 +290,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "./test.jpg"
+							"src": "./docs/test.jpg"
 						},
 						{
 							"key": "json",
@@ -351,7 +351,7 @@
 						{
 							"key": "file",
 							"type": "file",
-							"src": "./test.jpg"
+							"src": "./docs/test.jpg"
 						},
 						{
 							"key": "json",

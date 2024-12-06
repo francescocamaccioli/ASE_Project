@@ -113,15 +113,14 @@ if (isset($_POST['roll_gatcha'])) {
     $rarity = $response['gatcha']['rarity'];
     $image = $response['gatcha']['image'];
     $imageUrl = "proxy.php?url=" . urlencode($GATEWAY_URL_INSIDE_CONTAINER . $image);
-
     echo "<script>
         document.addEventListener('DOMContentLoaded', function() {
             Swal.fire({
                 title: 'Congratulations!',
                 text: 'You rolled a " . htmlspecialchars($name) . " (" . htmlspecialchars($rarity) . ")',
                 imageUrl: '" . htmlspecialchars($imageUrl ) . "',
-                imageWidth: 400,
-                imageHeight: 200,
+                imageWidth: 300,
+                imageHeight: 'auto',
                 imageAlt: 'Gatcha Image',
                 confirmButtonText: 'Awesome!'
             });

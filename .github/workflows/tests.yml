@@ -105,3 +105,28 @@ jobs:
 
       - name: Stop Docker Compose
         run: docker compose -f src/docker-compose.yml down
+
+
+  auth-service-isolation-tests:
+      name: Auth service isolation tests
+      runs-on: ubuntu-latest
+
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Build and run the whole system using Docker Compose
+          run: docker compose -f src/auth/docker-compose.yml up -d
+
+        - name: Run the Postman tests
+          # questo comando scarica la collection e l'environment direttamente da Postman, senza che noi dobbiamo scaricarli
+          # COLLEZIONE CON I TEST DI ISOLAMENTO PER IL SERVIZIO AUTH E BASTA
+          run: |
+            curl -o- "https://dl-cli.pstmn.io/install/linux64.sh" | sh
+            postman login --with-api-key ${{ secrets.POSTMAN_AK2 }}
+            postman collection run 26720283-efa4a5ea-7821-4489-a5b3-1b8720e26ebe -e 39572593-8bfb337c-8e52-45f6-8649-a6d452382c62 --insecure
+        - name: Output Docker Compose logs
+          if: always()
+          run: docker compose -f src/docker-compose.yml logs
+
+        - name: Stop Docker Compose
+          run: docker compose -f src/docker-compose.yml down

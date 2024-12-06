@@ -100,34 +100,6 @@ if (isset($_POST['increase_balance'])) {
     ]);
 }
 
-// Handle roll gatcha
-if (isset($_POST['roll_gatcha'])) {
-    $response = api_call('GET', '/gatcha/roll');
-
-    if(empty($response['message'])){
-        return;
-    }
-
-    $roll_message = $response['message'];
-    $name = $response['gatcha']['name'];
-    $rarity = $response['gatcha']['rarity'];
-    $image = $response['gatcha']['image'];
-    $imageUrl = "proxy.php?url=" . urlencode($GATEWAY_URL_INSIDE_CONTAINER . $image);
-    echo "<script>
-        document.addEventListener('DOMContentLoaded', function() {
-            Swal.fire({
-                title: 'Congratulations!',
-                text: 'You rolled a " . htmlspecialchars($name) . " (" . htmlspecialchars($rarity) . ")',
-                imageUrl: '" . htmlspecialchars($imageUrl ) . "',
-                imageWidth: 300,
-                imageHeight: 'auto',
-                imageAlt: 'Gatcha Image',
-                confirmButtonText: 'Awesome!'
-            });
-        });
-    </script>";
-}
-
 // Fetch user info
 if (isset($_SESSION['token'])) {
     $user_data = api_call('GET', '/user/balance');
@@ -140,99 +112,186 @@ if (isset($_SESSION['token'])) {
     $user_gatcha_data = api_call('GET', '/user/collection');
     $user_gatcha_ids =$user_gatcha_data;
 }
+
+
+// Handle roll gatcha
+if (isset($_POST['roll_gatcha'])) {
+    if ($balance < 10) {
+        echo "<script>
+            document.addEventListener('DOMContentLoaded', function() {
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Insufficient balance to roll gatcha. Please increase your balance.',
+                    icon: 'error',
+                    confirmButtonText: 'Okay'
+                });
+            });
+        </script>";
+    } else {
+        $response = api_call('GET', '/gatcha/roll');
+
+        if (empty($response['message'])) {
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        title: 'Error!',
+                        text: 'Failed to roll gatcha. Please try again.',
+                        icon: 'error',
+                        confirmButtonText: 'Okay'
+                    });
+                });
+            </script>";
+        } else {
+            $roll_message = $response['message'];
+            $name = $response['gatcha']['name'];
+            $rarity = $response['gatcha']['rarity'];
+            $image = $response['gatcha']['image'];
+            $imageUrl = "proxy.php?url=" . urlencode($GATEWAY_URL_INSIDE_CONTAINER . $image);
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        title: 'Congratulations!',
+                        text: 'You rolled a " . htmlspecialchars($name) . " (" . htmlspecialchars($rarity) . ")',
+                        imageUrl: '" . htmlspecialchars($imageUrl ) . "',
+                        imageWidth: 300,
+                        imageHeight: 'auto',
+                        imageAlt: 'Gatcha Image',
+                        confirmButtonText: 'Awesome!'
+                    });
+                });
+            </script>";
+        }
+    }
+}
+
+
+
+// Fetch balance and gachas again
+if (isset($_SESSION['token'])) {
+    $user_data = api_call('GET', '/user/balance');
+    $balance = $user_data['balance'] ?? 0;
+
+    // Fetch gatcha collection
+    $gatcha_data = api_call('GET', '/gatcha/gatchas');
+
+    // Fetch user's gatchas
+    $user_gatcha_data = api_call('GET', '/user/collection');
+    $user_gatcha_ids =$user_gatcha_data;
+}
+
+
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-<link
-  rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
->
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard</title>
+    <!-- Pico CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/@picocss/pico@latest/css/pico.min.css">
+    <!-- Boxicons for Icons -->
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
     <style>
-        img {
-            max-width: 100%;
+        main.container {
+            max-width: 800px;
+            margin: 0 auto;
         }
-        .owned {
-            color: green;
+        .flex {
+            display: flex;
+            gap: 2rem;
         }
-        .not-owned {
-            color: red;
+        form {
+            width: 100%;
+        }
+        .error {
+            color: var(--color-danger);
+        }
+        .success {
+            color: var(--color-success);
         }
     </style>
 </head>
 <body>
 <main class="container">
     <?php if (!isset($_SESSION['token'])): ?>
-        <h1>Home</h1>
-        <div style="display: flex; justify-content: space-around;">
+        <h1>Welcome</h1>
+        <div class="flex">
             <div>
                 <h2>Login</h2>
                 <?php if (isset($error) && !isset($_POST['register'])): ?>
-                    <p style="color:red;"><?php echo htmlspecialchars($error); ?></p>
+                    <p class="error"><?php echo htmlspecialchars($error); ?></p>
                 <?php endif; ?>
                 <form method="post">
-                    <label for="username">Username</label>
-                    <input type="text" name="username" required>
-                    <label for="password">Password</label>
-                    <input type="password" name="password" required>
-                    <button type="submit" name="login" class="contrast">Login</button>
+                    <label for="username"><i class='bx bx-user'></i> Username</label>
+                    <input type="text" name="username" required placeholder="Enter your username">
+                    <label for="password"><i class='bx bx-lock'></i> Password</label>
+                    <input type="password" name="password" required placeholder="Enter your password">
+                    <button type="submit" name="login" class="contrast">
+                        <i class='bx bx-log-in'></i> Login
+                    </button>
                 </form>
             </div>
             <div>
                 <h2>Register</h2>
                 <?php if (isset($register_message)): ?>
-                    <p style="color:green;"><?php echo htmlspecialchars($register_message); ?></p>
+                    <p class="success"><?php echo htmlspecialchars($register_message); ?></p>
                 <?php endif; ?>
                 <?php if (isset($error) && isset($_POST['register'])): ?>
-                    <p style="color:red;"><?php echo htmlspecialchars($error); ?></p>
+                    <p class="error"><?php echo htmlspecialchars($error); ?></p>
                 <?php endif; ?>
                 <form method="post">
-                    <label for="username">Username</label>
-                    <input type="text" name="username" required>
-                    <label for="password">Password</label>
-                    <input type="password" name="password" required>
-                    <label for="email">Email</label>
-                    <input type="email" name="email" required>
-                    <button type="submit" name="register" class="contrast">Register</button>
+                    <label for="username"><i class='bx bx-user'></i> Username</label>
+                    <input type="text" name="username" required placeholder="Choose a username">
+                    <label for="password"><i class='bx bx-lock'></i> Password</label>
+                    <input type="password" name="password" required placeholder="Choose a password">
+                    <label for="email"><i class='bx bx-envelope'></i> Email</label>
+                    <input type="email" name="email" required placeholder="Enter your email">
+                    <button type="submit" name="register" class="contrast">
+                        <i class='bx bx-user-plus'></i> Register
+                    </button>
                 </form>
             </div>
         </div>
-    <?php else: ?>
-        <h1>Welcome to <b>Lady Gatcha</b></h1>
-        <p>User UUID: <?php echo htmlspecialchars($_SESSION['userID'] ?? 'N/A'); ?></p>
-        <p>Gagabucks Balance: <?php echo htmlspecialchars($balance); ?></p>
-        <form method="post">
-            <button type="submit" name="increase_balance">Increase Balance +<?=$BALANCE_INCREASE_AMOUNT?></button>
-            <button type="submit" name="roll_gatcha">Roll Gatcha</button>
-            <button type="submit" name="logout">Logout</button>
-        </form>
-
-        <h2>Your Gatcha Collection</h2>
-        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
-            <?php foreach ($gatcha_data as $index => $gatcha): ?>
-                <?php if ($index > 0 && $index % 5 == 0): ?>
-                    </div><div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
-                <?php endif; ?>
-            <article class="card">
-            <header>
-            <img src="proxy.php?url=<?php echo urlencode($GATEWAY_URL_INSIDE_CONTAINER . $gatcha['image']); ?>" alt="<?php echo htmlspecialchars($gatcha['name']); ?>">
-            <h3><?php echo htmlspecialchars($gatcha['name']); ?></h3>
-            </header>
-            <p>Rarity: <?php echo htmlspecialchars($gatcha['rarity']); ?></p>
-            <p>Gatcha ID: <?php echo htmlspecialchars($gatcha['_id']); ?></p>
-            <?php if (in_array($gatcha['_id'], $user_gatcha_ids)): ?>
-            <p class="owned">Owned</p>
-            <?php else: ?>
-            <p class="not-owned">Not Owned</p>
-            <?php endif; ?>
+        <?php else: ?>
+            <article>
+                <header>
+                    <h1>Welcome to <b>Lady Gatcha</b></h1>
+                </header>
+                <p><strong>User UUID:</strong> <?php echo htmlspecialchars($_SESSION['userID'] ?? 'N/A'); ?></p>
+                <p><strong>Gagabucks Balance:</strong> <?php echo htmlspecialchars($balance); ?></p> <i class='bx bx-money'></i>
             </article>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
+            <form method="post" class="grid">
+                <button type="submit" name="increase_balance" class="contrast">
+                    <i class='bx bx-money'></i> Increase Balance +<?=$BALANCE_INCREASE_AMOUNT?>
+                </button>
+                <button type="submit" name="roll_gatcha" class="contrast">
+                    <i class='bx bx-dice-5'></i> Roll Gatcha
+                </button>
+                <button type="submit" name="logout" class="contrast">
+                    <i class='bx bx-log-out'></i> Logout
+                </button>
+            </form>
+        
+            <h2>Your Gatcha Collection</h2>
+            <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                <?php foreach ($gatcha_data as $index => $gatcha): ?>
+                    <article class="card">
+                        <header>
+                            <img src="proxy.php?url=<?php echo urlencode($GATEWAY_URL_INSIDE_CONTAINER . $gatcha['image']); ?>" alt="<?php echo htmlspecialchars($gatcha['name']); ?>">
+                            <h3><?php echo htmlspecialchars($gatcha['name']); ?></h3>
+                        </header>
+                        <p>Rarity: <?php echo htmlspecialchars($gatcha['rarity']); ?></p>
+                        <p>Gatcha ID: <?php echo htmlspecialchars($gatcha['_id']); ?></p>
+                        <?php if (in_array($gatcha['_id'], $user_gatcha_ids)): ?>
+                            <p class="owned">Owned</p>
+                        <?php else: ?>
+                            <p class="not-owned">Not Owned</p>
+                        <?php endif; ?>
+                    </article>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
 </main>
 </body>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

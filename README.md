@@ -2,8 +2,6 @@
 
 Advanced Software Engineering 24/25 Course Project
 
-- [Postman Workspace](https://elements.getpostman.com/redirect?entityId=26720283-80745346-aaa6-4cff-b0dd-137edb46a5f3&entityType=collection) with tests
-
 ## Get Started
 
 1. Navigate to the src folder:
@@ -18,7 +16,18 @@ Advanced Software Engineering 24/25 Course Project
    docker compose up --build
    ```
 
-3. Use Postman to run the *integration-tests* Collection.
+3. Navigate to the **root** folder (important):
+   
+   ```shell
+   cd ..
+   ```
+
+4. Run the integration tests collection using Newman:
+   
+   ```shell
+   newman run docs/integration-tests.postman_collection.json -e docs/localhost-ema-with-https.postman_environment.json --insecure
+   ```
+
 
 ## Isolation Testing
 
@@ -36,7 +45,20 @@ To test each microservice in isolation, run the following steps:
    docker compose up --build
    ```
 
-3. Use Postman to run the isolation test collection related to the chosen microservice
+3. Navigate to the **root** folder (important):
+   
+   ```shell
+   cd ..
+   ```
+
+4. Run the isolation tests collection using Newman:
+   
+   ```shell
+   newman run docs/isolation-auth-service.postman_collection.json -e docs/localhost-ema-with-https.postman_environment.json --insecure
+   newman run docs/isolation-gatcha-service.postman_collection.json -e docs/localhost-ema-with-https.postman_environment.json --insecure
+   newman run docs/isolation-market-service.postman_collection.json -e docs/localhost-ema-with-https.postman_environment.json --insecure
+   newman run docs/isolation-user-service.postman_collection.json -e docs/localhost-ema-with-https.postman_environment.json --insecure
+   ```
 
 ## The /docs folder
 
@@ -46,3 +68,5 @@ Contains:
 - Gaga OpenAPI.yml: the openAPI specification, importable in Swagger to check the REST API endpoint specification.
 - ASE Report.pdf: the detailed report of the project.
 - locustfile.py: locust python script for performance and rolling probabilities tests.
+- The Postman collections and environment for integration and isolation testing.
+- A test.jpg image, used by the Postman tests.

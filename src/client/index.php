@@ -102,7 +102,29 @@ if (isset($_POST['increase_balance'])) {
 // Handle roll gatcha
 if (isset($_POST['roll_gatcha'])) {
     $response = api_call('GET', '/gatcha/roll');
-    $roll_message = $response['message'] ?? 'Rolled successfully';
+
+    if(empty($response['message'])){
+        return;
+    }
+
+    $roll_message = $response['message'];
+    $name = $response['gatcha']['name'];
+    $rarity = $response['gatcha']['rarity'];
+    $image = $response['gatcha']['image'];
+
+    echo "<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            Swal.fire({
+                title: 'Congratulations!',
+                text: 'You rolled a " . htmlspecialchars($name) . " (" . htmlspecialchars($rarity) . ")',
+                imageUrl: '" . htmlspecialchars($GATEWAY_URL_OUTSIDE_CONTAINER . $image) . "',
+                imageWidth: 400,
+                imageHeight: 200,
+                imageAlt: 'Gatcha Image',
+                confirmButtonText: 'Awesome!'
+            });
+        });
+    </script>";
 }
 
 // Fetch user info
@@ -179,7 +201,7 @@ if (isset($_SESSION['token'])) {
             </div>
         </div>
     <?php else: ?>
-        <h1>Welcome, <?php echo htmlspecialchars($user_data['username'] ?? 'User'); ?></h1>
+        <h1>Welcome to <b>Lady Gatcha</b></h1>
         <p>UUID: <?php echo htmlspecialchars($_SESSION['userID'] ?? 'N/A'); ?></p>
         <p>Balance: <?php echo htmlspecialchars($balance); ?></p>
         <form method="post">
@@ -210,4 +232,5 @@ if (isset($_SESSION['token'])) {
     <?php endif; ?>
 </main>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </html>

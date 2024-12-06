@@ -154,10 +154,72 @@ def weighted_random_choice(rarities):
 
 
 # endregion utility functions ----------------------------------------
+@app.route('/gatchas/initialization', methods=['POST']) #Non visibile esternamente, usato per aggiungere gatcha all'inizio
+def initialize_gatchas():
+    """
+    Used to insert the gatchas in the DB at the beginning of the game. The endpoint is not visible to the users but it's only used the bootstrap.py script.
+    """
+    
+    if 'file' not in request.files or 'json' not in request.form:
+        return make_response(json_util.dumps({"error": "Both image file and JSON payload are required, as a multipart request."}), 400)
 
+    file = request.files['file']
 
+    if file.filename == '':
+        return make_response(json_util.dumps({"error": "No image file uploaded"}), 400)
+    
+    gatcha_uuid = uuid.uuid4().hex
 
+    filename = secure_filename(file.filename)
+    filename = f"{gatcha_uuid}_{filename}" # create a unique filename
+    destination_file_path = f"images/{filename}"
 
+    # Upload the file to MinIO bucket and get the image_url
+    try:
+        # Save the file to a temporary location
+        temp_file_path = os.path.join('/tmp', filename)
+        file.save(temp_file_path)
+
+        # Upload the file to MinIO
+        minio_client.fput_object(
+            bucket_name=MINIO_STORAGE_BUCKET_NAME, 
+            object_name=destination_file_path, 
+            file_path=temp_file_path,
+            content_type=file.content_type
+        )
+        print(
+            f"File '{file.filename}' successfully uploaded as '{destination_file_path}' to bucket '{MINIO_STORAGE_BUCKET_NAME}'"
+        )
+        image_url = f"/storage/{MINIO_STORAGE_BUCKET_NAME}/images/{filename}"
+    except Exception as e:
+        app.logger.error(f"Failed to upload image: {str(e)}")
+        return make_response(json_util.dumps({"error": "Failed to upload image"}), 500)
+    finally:
+        # Clean up the temporary file
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
+    # take the JSON from the request, and add the image URL we just defined to it
+    try:
+        data = json_util.loads(request.form.get('json'))
+    except Exception as e:
+        return make_response(json_util.dumps({"error": "Invalid JSON format provided"}), 400)
+
+    data['image'] = image_url
+    data["_id"] = gatcha_uuid
+    data["NTot"] = 0
+
+    # insert the data into the database
+    try:
+        db[GATCHA_COLLECTION_NAME].insert_one(data)
+        
+        response = make_response(json_util.dumps({"message": "Data with image added to gatcha_db", "data": data}), 200)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    except Exception as e:
+        return make_response(json_util.dumps({"error": f"Database insert failed: {str(e)}"}), 500)
+
+   
 # Endpoint per aggiungere dati nel database gacha_db
 @app.route('/gatchas', methods=['POST'])
 @role_required('adminUser')

@@ -215,7 +215,9 @@ if (isset($_SESSION['token'])) {
 <body>
 <main class="container">
     <?php if (!isset($_SESSION['token'])): ?>
-        <h1>Welcome</h1>
+        <h1>Welcome to Lady Gatcha</h1>
+        <p>Please login or register to continue.</p>
+        <br />
         <div class="flex">
             <div>
                 <h2>Login</h2>
@@ -259,11 +261,11 @@ if (isset($_SESSION['token'])) {
                     <h1>Welcome to <b>Lady Gatcha</b></h1>
                 </header>
                 <p><strong>User UUID:</strong> <?php echo htmlspecialchars($_SESSION['userID'] ?? 'N/A'); ?></p>
-                <p><strong>Gagabucks Balance:</strong> <?php echo htmlspecialchars($balance); ?></p> <i class='bx bx-money'></i>
+                <p><strong>Gagabucks Balance:</strong> <?php echo htmlspecialchars($balance); ?> G$</p>
             </article>
             <form method="post" class="grid">
                 <button type="submit" name="increase_balance" class="contrast">
-                    <i class='bx bx-money'></i> Increase Balance +<?=$BALANCE_INCREASE_AMOUNT?>
+                    <i class='bx bx-money'></i> Add Balance (+<?=$BALANCE_INCREASE_AMOUNT?>G$)
                 </button>
                 <button type="submit" name="roll_gatcha" class="contrast">
                     <i class='bx bx-dice-5'></i> Roll Gatcha

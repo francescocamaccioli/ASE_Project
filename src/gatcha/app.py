@@ -223,6 +223,15 @@ def add_gatcha_data():
     except Exception as e:
         return make_response(json_util.dumps({"error": "Invalid JSON format provided"}), 400)
 
+    if data is None:
+        return make_response(json_util.dumps({"error": "Invalid JSON format provided"}), 400)
+    
+    if data.get('name') is None:
+        return make_response(json_util.dumps({"error": "Invalid JSON format provided"}), 400)
+
+    if data.get('rarity') is None:
+        return make_response(json_util.dumps({"error": "Invalid JSON format provided"}), 400)
+
     data['image'] = image_url
     data["_id"] = gatcha_uuid
     data["NTot"] = 0

@@ -107,7 +107,7 @@ if (isset($_POST['roll_gatcha'])) {
 
 // Fetch user info
 if (isset($_SESSION['token'])) {
-    $user_data = api_call('GET', '/user/users/' . $_SESSION['userID']);
+    $user_data = api_call('GET', '/user/balance');
     $balance = $user_data['balance'] ?? 0;
 
     // Fetch gatcha collection

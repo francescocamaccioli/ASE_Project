@@ -1,0 +1,893 @@
+{
+	"info": {
+		"_postman_id": "5c01fd1f-792e-46a1-8fd8-c61910ac311a",
+		"name": "isolation-user-service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26720283",
+		"_collection_link": "https://ladygatcha-team.postman.co/workspace/ASE-project-ladygatcha~9f0fd141-4312-4348-9e57-9e529572e41c/collection/40249701-5c01fd1f-792e-46a1-8fd8-c61910ac311a?action=share&source=collection_link&creator=26720283"
+	},
+	"item": [
+		{
+			"name": "/user/checkconnection",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/checkconnection",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"checkconnection"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/user/getAll",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/getAll",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"getAll"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "init-user",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 201 or 409\", function () {",
+							"    pm.expect([201, 409]).to.include(pm.response.code);",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userID\": \"12345\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/init-user",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"init-user"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "init-user2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code 400\", function () {",
+							"    pm.expect([400]).to.include(pm.response.code);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/init-user",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"init-user"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "user info",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/users/12345",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"users",
+						"12345"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "user info 2",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 404\", function () {",
+							"    pm.response.to.have.status(404);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/users/",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"users",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "increase balance",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userID\": \"12d558b3-0f50-42cf-b28b-7c692e684317\",\n    \"amount\" : 500\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/increase_balance",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"increase_balance"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "increase balance 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 500\", function () {",
+							"    pm.expect(pm.response.code).to.equal(500);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userID\": \"12d558b3-0f50-42cf-b28b-7c692e684317\"\n    \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/increase_balance",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"increase_balance"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "decrease balance",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userID\": \"12d558b3-0f50-42cf-b28b-7c692e684317\",\n    \"amount\" : 3\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/decrease_balance",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"decrease_balance"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "decrease balance 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 404\", function () {",
+							"    pm.expect(pm.response.code).to.equal(404);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"amount\" : 3\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/decrease_balance",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"decrease_balance"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "refund",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userID\": \"12d558b3-0f50-42cf-b28b-7c692e684317\",\n    \"amount\" : 3\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/refund",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"refund"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "refund Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", function () {",
+							"    pm.expect(pm.response.code).to.equal(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userID\": \"12d558b3-0f50-42cf-b28b-7c692e684317\",\n    \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/refund",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"refund"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get balance",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/balance",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"balance"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get collection",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 when collection is retrieved\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response contains the user's collection\", function () {",
+							"    let jsonResponse = pm.response.json();",
+							"    pm.expect(jsonResponse).to.be.an('array'); // Assuming 'collection' is an array",
+							"});",
+							"",
+							"pm.test(\"Response time is acceptable\", function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000); // Expect response under 1 second",
+							"});",
+							"",
+							"pm.test(\"Error on invalid token\", function () {",
+							"    if (pm.response.code === 401) {",
+							"        let jsonResponse = pm.response.json();",
+							"        pm.expect(jsonResponse.error).to.eql(\"Error decoding token\");",
+							"    }",
+							"});",
+							"",
+							"pm.test(\"Error on user not found\", function () {",
+							"    if (pm.response.code === 404) {",
+							"        let jsonResponse = pm.response.json();",
+							"        pm.expect(jsonResponse.error).to.eql(\"User not found\");",
+							"    }",
+							"});",
+							"",
+							"pm.test(\"Server handles unexpected errors gracefully\", function () {",
+							"    if (pm.response.code === 500) {",
+							"        let jsonResponse = pm.response.json();",
+							"        pm.expect(jsonResponse).to.have.property(\"error\");",
+							"    }",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/collection",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"collection"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get transactions",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200 when transactions are retrieved\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Response contains the user's transactions\", function () {",
+							"    let jsonResponse = pm.response.json();",
+							"    pm.expect(jsonResponse).to.be.an('array'); // Assuming transactions is an array",
+							"});",
+							"",
+							"pm.test(\"Error on invalid token\", function () {",
+							"    if (pm.response.code === 401) {",
+							"        let jsonResponse = pm.response.json();",
+							"        pm.expect(jsonResponse.error).to.eql(\"Error decoding token\");",
+							"    }",
+							"});",
+							"",
+							"pm.test(\"Error on user not found\", function () {",
+							"    if (pm.response.code === 404) {",
+							"        let jsonResponse = pm.response.json();",
+							"        pm.expect(jsonResponse.error).to.eql(\"User not found\");",
+							"    }",
+							"});",
+							"",
+							"pm.test(\"Server handles unexpected errors gracefully\", function () {",
+							"    if (pm.response.code === 500) {",
+							"        let jsonResponse = pm.response.json();",
+							"        pm.expect(jsonResponse).to.have.property(\"error\");",
+							"    }",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/transactions",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"transactions"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "add gatcha",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"userID\": \"12345\",\n    \"gatcha_ID\": \"9b307cd40cb74f6790274111304d11e4\" \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/add_gatcha",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"add_gatcha"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "add gatcha 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 404\", function () {",
+							"    pm.expect(pm.response.code).to.equal(404);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \n    \"gatcha_ID\": \"9b307cd40cb74f6790274111304d11e4\" \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{USER_SERVICE_URL}}/add_gatcha",
+					"host": [
+						"{{USER_SERVICE_URL}}"
+					],
+					"path": [
+						"add_gatcha"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

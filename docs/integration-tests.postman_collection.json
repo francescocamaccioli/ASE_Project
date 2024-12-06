@@ -186,7 +186,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "postman-cloud:///1efa9f59-fd03-49c0-a6cb-30fe484b839c"
+									"src": "./test.jpg"
 								},
 								{
 									"key": "json",
@@ -247,7 +247,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "postman-cloud:///1efa9f59-fd03-49c0-a6cb-30fe484b839c"
+									"src": "./test.jpg"
 								},
 								{
 									"key": "json",
@@ -337,7 +337,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "postman-cloud:///1efa9f59-fd03-49c0-a6cb-30fe484b839c"
+									"src": "./test.jpg"
 								},
 								{
 									"key": "json",
@@ -428,7 +428,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "postman-cloud:///1efa9f59-fd03-49c0-a6cb-30fe484b839c"
+									"src": "./test.jpg"
 								},
 								{
 									"key": "json",
@@ -519,7 +519,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "postman-cloud:///1efa9f59-fd03-49c0-a6cb-30fe484b839c"
+									"src": "./test.jpg"
 								},
 								{
 									"key": "json",
@@ -610,7 +610,7 @@
 								{
 									"key": "file",
 									"type": "file",
-									"src": "postman-cloud:///1efa9f59-fd03-49c0-a6cb-30fe484b839c"
+									"src": "./test.jpg"
 								},
 								{
 									"key": "json",
@@ -2869,7 +2869,7 @@
 					"response": []
 				},
 				{
-					"name": "/market/add-auction",
+					"name": "add auction",
 					"event": [
 						{
 							"listen": "test",
@@ -2900,7 +2900,55 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"Gatcha_ID\": \"{{gatcha_ID_tosell}}\",\n\t\"starting_price\": \"10\"\n}",
+							"raw": "{\n    \"Gatcha_ID\": \"{{gatcha_ID_tosell}}\",\n\t\"starting_price\": 10\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/market/add-auction",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"market",
+								"add-auction"
+							]
+						},
+						"description": "The `POST /market/add-auction` endpoint is used to add a new auction to the market.\n\n### Request Body\n\n- The request should include the following parameters:\n    \n    - `auction_title` (text): The title of the auction.\n        \n    - `starting_price` (text): The starting price of the auction.\n        \n    - `end_date` (text): The end date of the auction.\n        \n    - `images` (file): Images related to the auction.\n        \n\n### Response\n\nThe response of this request is a JSON schema representing the structure of the response data."
+					},
+					"response": []
+				},
+				{
+					"name": "add auction wrong gatcha ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400, gatcha_ID is invalid\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"Gatcha_ID\": \"aaaaa\",\n\t\"starting_price\": 10\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2977,7 +3025,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"username\": \"user2\",\n    \"password\": \"passwordissima\"\n}",
+							"raw": "{\n    \"username\": \"user2\",\n    \"password\": \"newPassword\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2998,7 +3046,115 @@
 					"response": []
 				},
 				{
+					"name": "bid without money",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response is 500: bidder must have enough credit\", function () {",
+									"    pm.response.to.have.status(500);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"Auction_ID\": 1,\n    \"amount\": 20\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/market/bid",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"market",
+								"bid"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "increase balance",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userID\": \"{{user_id}}\",\n    \"amount\" : 500\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{GATEWAY_URL}}/user/increase_balance",
+							"host": [
+								"{{GATEWAY_URL}}"
+							],
+							"path": [
+								"user",
+								"increase_balance"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "bid",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -3091,6 +3247,20 @@
 				},
 				{
 					"name": "bid",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -3123,24 +3293,6 @@
 					"response": []
 				}
 			]
-		},
-		{
-			"name": "/market/auctions Copy",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{GATEWAY_URL}}/market/auctions",
-					"host": [
-						"{{GATEWAY_URL}}"
-					],
-					"path": [
-						"market",
-						"auctions"
-					]
-				}
-			},
-			"response": []
 		},
 		{
 			"name": "gateway root",

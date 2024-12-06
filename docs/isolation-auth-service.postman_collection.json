@@ -1,0 +1,995 @@
+{
+	"info": {
+		"_postman_id": "efa4a5ea-7821-4489-a5b3-1b8720e26ebe",
+		"name": "isolation-auth-service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26720283",
+		"_collection_link": "https://ladygatcha-team.postman.co/workspace/ASE-project-ladygatcha~9f0fd141-4312-4348-9e57-9e529572e41c/collection/26720283-efa4a5ea-7821-4489-a5b3-1b8720e26ebe?action=share&source=collection_link&creator=26720283"
+	},
+	"item": [
+		{
+			"name": "logout Copy",
+			"item": [
+				{
+					"name": "/auth/register - user_che_fa_logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Verify response status code is 200 or 400 and contains error message\", function () {",
+									"    pm.expect(pm.response.code).to.satisfy((code) => {",
+									"        return code === 200 || (code === 400 && pm.response.json().error === \"User already exists\");",
+									"    });",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"user_che_fa_logout\",\n    \"password\": \"passwordissima\",\n    \"email\": \"user_che_fa_logout@test.org\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_SERVICE_URL}}/register",
+							"host": [
+								"{{AUTH_SERVICE_URL}}"
+							],
+							"path": [
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "/auth/login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"",
+									"// va bene anche ",
+									"pm.test(\"Response status code is 200 or 400\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+									"});",
+									"",
+									"pm.test(\"Save access token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"token\", jsonData.access_token);",
+									"});",
+									"",
+									"pm.test(\"Save identity token to variable\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"user_che_fa_logout\",\n    \"password\": \"passwordissima\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{AUTH_SERVICE_URL}}/login",
+							"host": [
+								"{{AUTH_SERVICE_URL}}"
+							],
+							"path": [
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "introspect auth token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{AUTH_SERVICE_URL}}/introspect",
+							"host": [
+								"{{AUTH_SERVICE_URL}}"
+							],
+							"path": [
+								"introspect"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "intrispect ID_token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "token",
+									"value": "{{identity_token}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{AUTH_SERVICE_URL}}/introspect",
+							"host": [
+								"{{AUTH_SERVICE_URL}}"
+							],
+							"path": [
+								"introspect"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "revoke",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 200\", function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}} ",
+								"type": "text"
+							},
+							{
+								"key": "Identity",
+								"value": "Bearer {{identity_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{AUTH_SERVICE_URL}}/tokens/revoke",
+							"host": [
+								"{{AUTH_SERVICE_URL}}"
+							],
+							"path": [
+								"tokens",
+								"revoke"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "introspect AFTER REVOKE",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 401\", function () {",
+									"    pm.expect(pm.response.code).to.equal(401);",
+									"});",
+									"",
+									"",
+									"pm.test(\"The error message is 'Token revoked'\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.error).to.equal(\"Token revoked\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{AUTH_SERVICE_URL}}/introspect",
+							"host": [
+								"{{AUTH_SERVICE_URL}}"
+							],
+							"path": [
+								"introspect"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "introspect ID_TOKEN AFTER REVOKE",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status code is 401\", function () {",
+									"    pm.expect(pm.response.code).to.equal(401);",
+									"});",
+									"",
+									"",
+									"pm.test(\"The error message is 'Token revoked'\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.error).to.equal(\"Token revoked\");",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "token",
+									"value": "{{identity_token}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{AUTH_SERVICE_URL}}/introspect",
+							"host": [
+								"{{AUTH_SERVICE_URL}}"
+							],
+							"path": [
+								"introspect"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "register user1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Verify response status code is 200 or 400 and contains error message\", function () {",
+							"    pm.expect(pm.response.code).to.satisfy((code) => {",
+							"        return code === 200 || (code === 400 && pm.response.json().error === \"User already exists\");",
+							"    });",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"testpassword\",\n    \"email\": \"test@test.org\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/register",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "register user2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"testuser\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/register",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login user1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"",
+							"// va bene anche ",
+							"pm.test(\"Response status code is 200 \", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200]);",
+							"});",
+							"",
+							"pm.test(\"Save access token to variable\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.environment.set(\"token\", jsonData.access_token);",
+							"});",
+							"",
+							"",
+							"pm.test(\"Save identity token to variable\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+							"});",
+							"",
+							"pm.test(\"Save user_id token to variable\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.environment.set(\"user_id\", jsonData.userID);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"testuser\",      \n    \"password\": \"testpassword\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/login",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login user1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"",
+							"// va bene anche ",
+							"pm.test(\"Response status code is 400\", function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([ 400]);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"testuser\"      \n\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/login",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "userinfo for an id token",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/userinfo",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"userinfo"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "userinfo for an id token 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 401\", function () {",
+							"    pm.response.to.have.status(401);",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/userinfo",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"userinfo"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get all users from db Copy",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/debug/users",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"debug",
+						"users"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "introspect auth_token Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/introspect",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"introspect"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "introspect auth_token 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", function () {",
+							"    pm.expect(pm.response.code).to.equal(400);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "token",
+							"value": "",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/introspect",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"introspect"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "introspect id_token Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "token",
+							"value": "{{identity_token}}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/introspect",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"introspect"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "introspect id_token 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", function () {",
+							"    pm.expect(pm.response.code).to.equal(400);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "token",
+							"value": "",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/introspect",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"introspect"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "normaluseronly Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/test/normaluseronly",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"test",
+						"normaluseronly"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login - adminuser Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"adminuser\",\n    \"password\": \"password12\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/login",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login - adminuser Copy 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"Save access token to variable\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.environment.set(\"token\", jsonData.access_token);",
+							"});",
+							"",
+							"pm.test(\"Save identity token to variable\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.environment.set(\"identity_token\", jsonData.id_token);",
+							"});",
+							"",
+							"pm.test(\"Save user_id token to variable\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.environment.set(\"user_id\", jsonData.userID);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"adminuser\",\n    \"password\": \"password123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/login",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "adminuseronly permitted Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/test/adminuseronly",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"test",
+						"adminuseronly"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "bothroles permitted Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{AUTH_SERVICE_URL}}/test/bothroles",
+					"host": [
+						"{{AUTH_SERVICE_URL}}"
+					],
+					"path": [
+						"test",
+						"bothroles"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

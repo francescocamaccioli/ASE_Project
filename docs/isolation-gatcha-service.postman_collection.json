@@ -1,0 +1,743 @@
+{
+	"info": {
+		"_postman_id": "f65fb32a-25e8-4616-8a6d-cea3f1f8a734",
+		"name": "isolation-gatcha-service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26720283",
+		"_collection_link": "https://ladygatcha-team.postman.co/workspace/ASE-project-ladygatcha~9f0fd141-4312-4348-9e57-9e529572e41c/collection/26720283-f65fb32a-25e8-4616-8a6d-cea3f1f8a734?action=share&source=collection_link&creator=26720283"
+	},
+	"item": [
+		{
+			"name": "add gatcha comune Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"// Store the _id from the response inside an environment variable \"gatcha_id\"",
+							"pm.environment.set(\"gatcha_id\", pm.response.json().data._id);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "./test.jpg"
+						},
+						{
+							"key": "json",
+							"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"comune\"\n}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas"
+					]
+				},
+				"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+			},
+			"response": []
+		},
+		{
+			"name": "add gatcha comune 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 400\", function () {",
+							"    pm.expect(pm.response.code).to.equal(400);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "./test.jpg"
+						},
+						{
+							"key": "json",
+							"value": "{\n    \"name\": \"Common Warrior\",\n    \n}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas"
+					]
+				},
+				"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+			},
+			"response": []
+		},
+		{
+			"name": "add gatcha raro Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"// Store the _id from the response inside an environment variable \"gatcha_id\"",
+							"pm.environment.set(\"gatcha_id\", pm.response.json().data._id);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "./test.jpg"
+						},
+						{
+							"key": "json",
+							"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"raro\"\n}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas"
+					]
+				},
+				"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+			},
+			"response": []
+		},
+		{
+			"name": "add gatcha epico Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"// Store the _id from the response inside an environment variable \"gatcha_id\"",
+							"pm.environment.set(\"gatcha_id\", pm.response.json().data._id);",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "./test.jpg"
+						},
+						{
+							"key": "json",
+							"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"epico\"\n}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas"
+					]
+				},
+				"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+			},
+			"response": []
+		},
+		{
+			"name": "add gatcha leggendario Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"// Store the _id from the response inside an environment variable \"gatcha_id\"",
+							"pm.environment.set(\"gatcha_id\", pm.response.json().data._id);",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "./test.jpg"
+						},
+						{
+							"key": "json",
+							"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"leggendario\"\n}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas"
+					]
+				},
+				"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+			},
+			"response": []
+		},
+		{
+			"name": "add another gatcha leggendario Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"// Store the _id from the response inside an environment variable \"gatcha_id\"",
+							"pm.environment.set(\"gatcha_id\", pm.response.json().data._id);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"type": "file",
+							"src": "./test.jpg"
+						},
+						{
+							"key": "json",
+							"value": "{\n    \"name\": \"Common Warrior\",\n    \"rarity\": \"leggendario\"\n}",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas"
+					]
+				},
+				"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+			},
+			"response": []
+		},
+		{
+			"name": "get single gatcha Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 404\", function () {",
+							"    pm.expect(pm.response.code).to.equal(404);",
+							"});",
+							"",
+							"",
+							"pm.test(\"Response body contains error: 'Gatcha not found'\", function () {",
+							"    pm.expect(pm.response.json().error).to.equal(\"Gatcha not found\");",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas/1",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get single gatcha Copy 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas/{{gatcha_id}}",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas",
+						"{{gatcha_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "edit a single gatcha Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"pm.test(\"Response body structure is valid\", function () {",
+							"    var responseJSON = pm.response.json();",
+							"    pm.expect(responseJSON.data).to.be.an('object').that.includes.keys('_id', 'image', 'name', 'rarity');",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"rarity\": \"9999\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas/{{gatcha_id}}",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas",
+						"{{gatcha_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "edit a single gatcha Copy 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 404\", function () {",
+							"    pm.expect(pm.response.code).to.equal(404);",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"rarity\": \"9999\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas/1",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get all gatchas Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"pm.test(\"Response body structure is valid\", function () {",
+							"    var responseJSON = pm.response.json();",
+							"    pm.expect(responseJSON[0]).to.be.an('object').that.includes.keys('_id', 'image', 'name', 'rarity', 'NTot');",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete a gatcha Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 200\", function () {",
+							"    pm.expect(pm.response.code).to.equal(200);",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas/{{gatcha_id}}",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas",
+						"{{gatcha_id}}"
+					]
+				},
+				"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+			},
+			"response": []
+		},
+		{
+			"name": "delete a gatcha Copy 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status code is 404\", function () {",
+							"    pm.expect(pm.response.code).to.equal(404);",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{admin_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": []
+				},
+				"url": {
+					"raw": "{{GATCHA_SERVICE_URL}}/gatchas/1",
+					"host": [
+						"{{GATCHA_SERVICE_URL}}"
+					],
+					"path": [
+						"gatchas",
+						"1"
+					]
+				},
+				"description": "I create a new gatcha by sending the information and the image, which will be uploaded to the bucket.\n\nI check if I can download the image."
+			},
+			"response": []
+		}
+	]
+}

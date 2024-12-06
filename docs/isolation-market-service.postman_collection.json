@@ -1,0 +1,398 @@
+{
+	"info": {
+		"_postman_id": "f0be4f9f-3406-4e2c-bee6-0e1267bbae5d",
+		"name": "isolation-market-service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26720283",
+		"_collection_link": "https://ladygatcha-team.postman.co/workspace/ASE-project-ladygatcha~9f0fd141-4312-4348-9e57-9e529572e41c/collection/39902012-f0be4f9f-3406-4e2c-bee6-0e1267bbae5d?action=share&source=collection_link&creator=26720283"
+	},
+	"item": [
+		{
+			"name": "/market/add-auction",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Response message is 'auction added successfully'\", function () {",
+							"    pm.response.to.have.jsonBody('message', 'Auction added successfully');",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer 1",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"Gatcha_ID\": 1,\n\t\"starting_price\": 10\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{MARKET_SERVICE_URL}}/add-auction",
+					"host": [
+						"{{MARKET_SERVICE_URL}}"
+					],
+					"path": [
+						"add-auction"
+					]
+				},
+				"description": "The `POST /market/add-auction` endpoint is used to add a new auction to the market.\n\n### Request Body\n\n- The request should include the following parameters:\n    \n    - `auction_title` (text): The title of the auction.\n        \n    - `starting_price` (text): The starting price of the auction.\n        \n    - `end_date` (text): The end date of the auction.\n        \n    - `images` (file): Images related to the auction.\n        \n\n### Response\n\nThe response of this request is a JSON schema representing the structure of the response data."
+			},
+			"response": []
+		},
+		{
+			"name": "/market/add-auction 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer 1",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"Gatcha_ID\": 2\n    \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{MARKET_SERVICE_URL}}/add-auction",
+					"host": [
+						"{{MARKET_SERVICE_URL}}"
+					],
+					"path": [
+						"add-auction"
+					]
+				},
+				"description": "The `POST /market/add-auction` endpoint is used to add a new auction to the market.\n\n### Request Body\n\n- The request should include the following parameters:\n    \n    - `auction_title` (text): The title of the auction.\n        \n    - `starting_price` (text): The starting price of the auction.\n        \n    - `end_date` (text): The end date of the auction.\n        \n    - `images` (file): Images related to the auction.\n        \n\n### Response\n\nThe response of this request is a JSON schema representing the structure of the response data."
+			},
+			"response": []
+		},
+		{
+			"name": "/market/add-auction 3",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test(\"Response message is 'auction added successfully'\", function () {",
+							"    pm.response.to.have.jsonBody('message', 'Auction added successfully');",
+							"});",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer 1",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"Gatcha_ID\": 2,\n\t\"starting_price\": 30\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{MARKET_SERVICE_URL}}/add-auction",
+					"host": [
+						"{{MARKET_SERVICE_URL}}"
+					],
+					"path": [
+						"add-auction"
+					]
+				},
+				"description": "The `POST /market/add-auction` endpoint is used to add a new auction to the market.\n\n### Request Body\n\n- The request should include the following parameters:\n    \n    - `auction_title` (text): The title of the auction.\n        \n    - `starting_price` (text): The starting price of the auction.\n        \n    - `end_date` (text): The end date of the auction.\n        \n    - `images` (file): Images related to the auction.\n        \n\n### Response\n\nThe response of this request is a JSON schema representing the structure of the response data."
+			},
+			"response": []
+		},
+		{
+			"name": "/market/bid",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "1231241",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"Auction_ID\": 1,\n    \"amount\": 20\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{MARKET_SERVICE_URL}}/bid",
+					"host": [
+						"{{MARKET_SERVICE_URL}}"
+					],
+					"path": [
+						"bid"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/market/bid 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "1231241",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"Auction_ID\": 1\n\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{MARKET_SERVICE_URL}}/bid",
+					"host": [
+						"{{MARKET_SERVICE_URL}}"
+					],
+					"path": [
+						"bid"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/market/auction",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"Auction_ID\": 1\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{MARKET_SERVICE_URL}}/auction",
+					"host": [
+						"{{MARKET_SERVICE_URL}}"
+					],
+					"path": [
+						"auction"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/market/auction 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 400\", function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n   \n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{MARKET_SERVICE_URL}}/auction",
+					"host": [
+						"{{MARKET_SERVICE_URL}}"
+					],
+					"path": [
+						"auction"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/market/auctions",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{MARKET_SERVICE_URL}}/auctions",
+					"host": [
+						"{{MARKET_SERVICE_URL}}"
+					],
+					"path": [
+						"auctions"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

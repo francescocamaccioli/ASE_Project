@@ -1,4 +1,5 @@
 import os
+import uuid
 from flask import Flask, request, make_response, jsonify
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
@@ -12,18 +13,68 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 logging.basicConfig(level=logging.DEBUG)
-app = Flask(__name__)
 logger = logging.getLogger(__name__)
+
+app = Flask(__name__, instance_relative_config=True)
 
 # URLS dei microservizi
 GATCHA_URL = os.getenv('GATCHA_URL')
 MARKET_URL = os.getenv('MARKET_URL')
 
-
-
 # Connessione ai database dei microservizi (modificato per usare i container MongoDB tramite nome servizio)
 client_user = MongoClient("db-user", 27017, maxPoolSize=50)
 db_user= client_user["db_users"]
+
+UNIT_TEST_MODE = os.getenv('UNIT_TEST_MODE', 'False') == 'True'
+
+if UNIT_TEST_MODE:
+    app.logger.info("Running in unit test mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    from mocks import start_mocking_http_requests, no_op_decorator, fake_get_userID_from_jwt # mocks.py in the same folder
+    start_mocking_http_requests() # after calling this function, the requests are now mocked: they answer with the mocks defined inside app.py
+    role_required = no_op_decorator # override the role_required decorator to do nothing
+    get_userID_from_jwt = fake_get_userID_from_jwt # override the get_userID_from_jwt function to return a predefined user ID
+    test_user = {
+        "balance": 470,
+        "collection": [
+            "9b307cd40cb74f6790274111304d11e4",
+            "274d711d776c41bf81a63285c07fd519",
+            "4fa275d4ecd44f20a5f56543664e5b8f"
+        ],
+        "transactions": [
+            {
+                "amount": 500,
+                "timestamp": "Fri, 06 Dec 2024 10:55:18 GMT",
+                "type": "increase"
+            },
+            {
+                "amount": 10,
+                "timestamp": "Fri, 06 Dec 2024 10:55:18 GMT",
+                "type": "decrease"
+            },
+            {
+                "amount": 10,
+                "timestamp": "Fri, 06 Dec 2024 10:55:18 GMT",
+                "type": "decrease"
+            },
+            {
+                "amount": 10,
+                "timestamp": "Fri, 06 Dec 2024 10:55:18 GMT",
+                "type": "decrease"
+            }
+        ],
+        "userID": "12d558b3-0f50-42cf-b28b-7c692e684317"
+    }
+
+    # Insert the test user into the database
+    try:
+        if not db_user.collection.find_one({"userID": test_user["userID"]}):
+            db_user.collection.insert_one(test_user)
+            logging.info("Inserted test user into the database")
+    except ServerSelectionTimeoutError:
+        print("Could not connect to MongoDB server.")
+else :
+    app.logger.info("Running in normal mode!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+    
 
 def userExists(userID):
     return db_user.collection.find_one({"userID": userID}) is not None
@@ -47,7 +98,7 @@ def init_user():
         
         if userExists(userID):
             logger.debug(f"User with userID {userID} already exists")
-            return make_response(jsonify({"error": "User already exists"}), 400)
+            return make_response(jsonify({"error": "User already exists"}), 409)
         
         user = {
             "userID": userID,
@@ -247,27 +298,6 @@ def get_collection():
         if user is None:
             return make_response(jsonify({"error": "User not found"}), 404)
         return make_response(jsonify(user["collection"]), 200)
-    except Exception as e:
-        return make_response(jsonify({"error": str(e)}), 500)
-    
-# Endpoint per ricevere informazioni su un gatcha nella collezione di un utente
-@app.route('/collection/<gatcha_ID>', methods=['GET'])
-def get_gatcha_from_collection(gatcha_ID):
-    try: 
-        userID = get_userID_from_jwt()
-    except Exception as e:
-        return make_response(jsonify({"error": "Error decoding token"}), 401)
-    try:
-        user = db_user.collection.find_one({"userID": userID})
-        if user is None:
-            return make_response(jsonify({"error": "User not found"}), 404)
-        if gatcha_ID not in user["collection"]:
-            return make_response(jsonify({"error": "Gatcha not found in collection"}), 404)
-        # GET request to Gatcha microservice to get gatcha info
-        response = requests.get(GATCHA_URL + "/gatchas/" + gatcha_ID, timeout=10)    #erased request to gateway
-        if response.status_code != 200:
-            return make_response(jsonify({"error": "Failed to get gatcha info"}, response.text), 500)
-        return make_response(response.json(), 200)
     except Exception as e:
         return make_response(jsonify({"error": str(e)}), 500)
 

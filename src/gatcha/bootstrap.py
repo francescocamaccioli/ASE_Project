@@ -2,6 +2,9 @@ import requests
 import json
 import os
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 STATE_FILE = './already_bootstrapped.txt'
 
 def send_request(url, name, rarity, file_path):

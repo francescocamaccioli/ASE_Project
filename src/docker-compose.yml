@@ -8,6 +8,20 @@ x-common-environment:
   AUTH_URL: https://auth:5000
 
 services:
+
+  client:
+    build: ./client
+    ports:
+      - "8080:80"
+    networks:
+      - gateway-network
+    depends_on:
+      - gateway
+    volumes:
+      - ./client:/var/www/html/
+    environment:
+      - GATEWAY_URL=https://gateway:5000
+
   # Gateway Service
   gateway:
     build: ./gateway

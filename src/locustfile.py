@@ -181,7 +181,7 @@ class GachaUser(FastHttpUser):
 
     # --- Market Microservice Tasks ---
 
-    @task(1)
+    @task(2)
     def add_auction(self):
         """Add a new auction."""
         if not hasattr(self, 'inventory') or not self.inventory:
@@ -207,7 +207,7 @@ class GachaUser(FastHttpUser):
         else:
             logger.error(f"Failed to add auction for {self.username}: {response.status_code} + {response.text}")
 
-    @task(2)
+    @task(1)
     def place_bid(self):
         """Place a bid on an auction."""
         with GachaUser.auction_ids_lock:
@@ -220,13 +220,16 @@ class GachaUser(FastHttpUser):
         response_details = self.client.get(
             "/market/auction",
             headers=self.headers,
-            json={"Auction_ID": auction_id},  # Sending JSON body as per server expectation
+            json={"Auction_ID": auction_id},
             verify=False
         )
 
         if response_details.status_code != 200:
             # Extract error message from the response
-            error_message = response_details.json().get("error", response_details.text)
+            try:
+                error_message = response_details.json().get("error", response_details.text)
+            except ValueError:
+                error_message = response_details.text
             logger.error(f"Failed to fetch auction {auction_id} details: {error_message}")
             return
 
@@ -245,7 +248,9 @@ class GachaUser(FastHttpUser):
             return
 
         # Define the bid amount to be higher than current_price
-        bid_amount = random.randint(current_price + 1, current_price + 1000)
+        # Adding a random increment between 1 and 1000 to ensure it's higher
+        bid_increment = random.randint(1, 1000)
+        bid_amount = current_price + bid_increment
         logger.info(f"{self.username} attempting to bid {bid_amount} on auction {auction_id} with current_price {current_price}")
 
         # Check if the user has sufficient balance
@@ -271,10 +276,13 @@ class GachaUser(FastHttpUser):
             logger.info(f"{self.username} placed a bid of {bid_amount} on auction {auction_id}. New balance: {self.balance}")
         elif response.status_code == 400:
             # Extract and log the specific error message
-            error_message = response_details.json().get("error", response_details.text)
+            try:
+                error_message = response_details.json().get("error", response_details.text)
+            except ValueError:
+                error_message = response_details.text
             logger.info(f"{self.username} failed to place a bid on auction {auction_id}: {error_message}")
         else:
-            logger.error(f"Failed to place bid on auction due to service failure {auction_id} for {self.username}: {response.status_code} - {response.text}")
+            logger.error(f"Failed to place bid on auction {auction_id} for {self.username}: {response.status_code} - {response.text}")
 
     @task(1)
     def get_auction(self):

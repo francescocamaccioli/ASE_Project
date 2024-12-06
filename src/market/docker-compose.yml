@@ -1,0 +1,49 @@
+# Definisce un campo di estensione
+# serve per evitare di ripetere le stesse variabili in più servizi, senza dover fare copia-incolla
+x-common-environment:
+  &common-env
+  GATCHA_URL: https://gatcha:5000
+  USER_URL: https://user:5000
+  MARKET_URL: https://market:5000
+  AUTH_URL: https://auth:5000
+
+services:
+
+  # market service
+  market_test:
+    build: .
+    container_name: market-container-isolation
+    ports:
+      - "5007:5000"
+    depends_on:
+      - db-market
+    environment:
+      <<: *common-env
+      
+      MARKET_DATABASE_URL: db-market
+      UNIT_TEST_MODE: "True"
+    secrets:
+      - market_cert
+      - market_key
+
+  # MongoDB for market (Database per il servizio market)
+  db-market:
+    image: mongo:latest
+    container_name: db-market-container-isolation
+    # ports:
+    # - "27017:27017"  # è esposta solo per debugging, da commentare in produzione.
+    volumes:
+      - dbdata-market:/data/db
+      - ./mongo/seed-data:/docker-entrypoint-initdb.d # mongo, all'avvio, esegue automaticamente tutti i file .js che trova in quella cartella. serve per popolare con i dati iniziali. see: https://stackoverflow.com/questions/42912755/how-to-create-a-db-for-mongodb-container-on-start-up/42917632#42917632
+    environment:
+      MONGO_INITDB_DATABASE: market  # Nome del database per Gatcha
+    command: mongod --quiet --logpath /dev/null  # Avvia MongoDB con log minimizzati
+
+volumes:
+  dbdata-market:
+
+secrets:
+  market_cert:
+    file: ./localhost_cert.pem
+  market_key:
+    file: ./localhost_key.pem
